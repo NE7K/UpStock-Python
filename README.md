@@ -4,9 +4,11 @@
 
 미국 증시 심리 지표 및 시장 데이터 분석 및 요약
 
-## 🔍 WBS
+## System configuration diagram
 
-<img width="753" alt="Image" src="https://github.com/user-attachments/assets/76560266-34ed-42d8-90ae-470ef0e09590" />
+<img width="100%" alt="wbs" src="https://github.com/user-attachments/assets/1fe24cfe-0da4-4d8e-bc22-7ada93908529" />
+
+## 🔍 WBS
 
 ## 📝 Contribution Guide
 
