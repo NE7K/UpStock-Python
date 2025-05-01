@@ -6,10 +6,18 @@
 
 ## System configuration diagram
 
-<img width="100%" alt="wbs" src="https://github.com/user-attachments/assets/1fe24cfe-0da4-4d8e-bc22-7ada93908529" />
+<img width="100%" alt="system diagram" src="https://github.com/user-attachments/assets/1fe24cfe-0da4-4d8e-bc22-7ada93908529" />
 
 ## 🔍 WBS
 
+-
+
+## 📊 Target User Flow
+
+The following diagram illustrates the user flow within the UpStock application :
+
+<img width="100%" alt="UserFlow" src="https://github.com/user-attachments/assets/4379bea8-8f86-4f87-b6f6-7e2da1a93823" />
+    
 ## 📝 Contribution Guide
 
 1. Fork this repository.
