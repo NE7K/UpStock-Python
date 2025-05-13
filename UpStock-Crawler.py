@@ -23,8 +23,7 @@ import pyperclip
 load_dotenv()
 
 # selenium high version에서는 경로를 지정해줄 필요가 없음
-openWindow = webdriver.ChromeOptions()
-openWindow.add_argument('https://www.financialjuice.com/home')
+
 
 # todo : 좌측 실시간 지표 결과 크롤링
 
