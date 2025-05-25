@@ -8,37 +8,28 @@ import yfinance as yf
 # note regex import
 import re
 
-# Part Get Yahoo Finance Data
+# Get Yahoo Finance Data
 StockData = yf.download('^NDX', start='2000-01-01', end='2025-05-13')
-
-# print(StockData)
-
-
-# Part Save CSV file
-
-# info Column : index, date , price, close, high, low, open, volume
 StockData.to_csv('StockData_Analysis.csv')
 
-# Part Get Data Collection for news title
+# Get CNBC news
 # loader = WebBaseLoader('https://www.cnbc.com/world/?region=world')
 # title_data = loader.load()
 
-loader2 = WebBaseLoader('https://finviz.com/news.ashx')
-title_data2 = loader2.load()
+# csv file load
+Stock_PriceData = pd.read_csv('StockData_Analysis.csv')
 
+loader = WebBaseLoader('https://finviz.com/news.ashx')
+title_data = loader.load()
 
-df = title_data2[0]
+df = title_data[0].page_content
 
-# list - 시간 \n 기사 제목
-print(title_data2)
+# 날짜와 내용 분리 정규식
+pattern = r"(May-\d{2}|Apr-\d{2}|Jun-\d{2})\s+([^\n]+)"
+regex_title = re.findall(pattern, df)
 
-# Part 정규식 page_content 뒤에 나오는 내용, 
+df = pd.DataFrame(regex_title, columns=['date', 'news_context'])
+df.to_csv('test.csv')
 
-
-exit()
-
-# Part Insert Data CSV (Supabase)
-
-# Part Load Data CSV file
-
-# Part 
+df = pd.read_csv('test.csv')
+print(df)
