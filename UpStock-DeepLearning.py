@@ -9,7 +9,7 @@ import yfinance as yf
 import re
 
 # Get Yahoo Finance Data
-StockData = yf.download('^NDX', start='2000-01-01', end='2025-05-13')
+StockData = yf.download('^NDX', start='1971-02-05', end='2025-05-25')
 StockData.to_csv('StockData_Analysis.csv')
 
 # Get CNBC news
@@ -17,7 +17,7 @@ StockData.to_csv('StockData_Analysis.csv')
 # title_data = loader.load()
 
 # csv file load
-Stock_PriceData = pd.read_csv('StockData_Analysis.csv')
+# Stock_PriceData = pd.read_csv('StockData_Analysis.csv')
 
 loader = WebBaseLoader('https://finviz.com/news.ashx')
 title_data = loader.load()
@@ -28,8 +28,8 @@ df = title_data[0].page_content
 pattern = r"(May-\d{2}|Apr-\d{2}|Jun-\d{2})\s+([^\n]+)"
 regex_title = re.findall(pattern, df)
 
-df = pd.DataFrame(regex_title, columns=['date', 'news_context'])
-df.to_csv('test.csv')
+df = pd.DataFrame(regex_title, columns=['date', 'news_context'])    
+df.to_csv('UpStock-NewsData.csv', index=False)
 
-df = pd.read_csv('test.csv')
+# df = pd.read_csv('test.csv')
 print(df)
