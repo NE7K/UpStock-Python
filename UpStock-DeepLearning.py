@@ -10,7 +10,7 @@ import re
 
 # Get Yahoo Finance Data
 StockData = yf.download('^NDX', start='1971-02-05', end='2025-05-25')
-StockData.to_csv('StockData_Analysis.csv')
+StockData.to_csv('UpStock_StockPriceData.csv')
 
 # Get CNBC news
 # loader = WebBaseLoader('https://www.cnbc.com/world/?region=world')
