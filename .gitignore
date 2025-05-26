@@ -179,3 +179,5 @@ news.zip
 
 # tracking 필요없는 파일
 .DS_Store
+stock-news-scraping.py
+
