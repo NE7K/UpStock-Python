@@ -1,8 +1,5 @@
 import pandas as pd
-import tensorflow as tf
-
 from langchain_community.document_loaders import WebBaseLoader
-
 import yfinance as yf
 
 # note regex import
@@ -19,6 +16,7 @@ StockData.to_csv('UpStock_StockPriceData.csv')
 # csv file load
 # Stock_PriceData = pd.read_csv('StockData_Analysis.csv')
 
+# Part Finviz Crawle
 loader = WebBaseLoader('https://finviz.com/news.ashx')
 title_data = loader.load()
 
@@ -32,4 +30,3 @@ df = pd.DataFrame(regex_title, columns=['date', 'news_context'])
 df.to_csv('UpStock-NewsData.csv', index=False)
 
 # df = pd.read_csv('test.csv')
-print(df)
