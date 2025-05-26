@@ -1,32 +1,43 @@
+import tensorflow as tf
 import pandas as pd
-from langchain_community.document_loaders import WebBaseLoader
-import yfinance as yf
 
-# note regex import
-import re
+price_data = pd.read_csv('DataSets/stock_price_data.csv')
 
-# Get Yahoo Finance Data
-StockData = yf.download('^NDX', start='1971-02-05', end='2025-05-25')
-StockData.to_csv('UpStock_StockPriceData.csv')
+# 초기 모델에 사용한 데이터셋
+# news_data = pd.read_csv('DataSets/UpStock-NewsData.csv')
 
-# Get CNBC news
-# loader = WebBaseLoader('https://www.cnbc.com/world/?region=world')
-# title_data = loader.load()
+# news_data = pd.read_csv('DataSets/raw_partner_headlines.csv')
+# news_data2 = pd.read_csv('DataSets/raw_analyst_ratings.csv')
+news_data = pd.read_csv('DataSets/analyst_ratings_processed.csv')
 
-# csv file load
-# Stock_PriceData = pd.read_csv('StockData_Analysis.csv')
+# print(news_data)
+# print(news_data2)
+# print(news_data)
 
-# Part Finviz Crawle
-loader = WebBaseLoader('https://finviz.com/news.ashx')
-title_data = loader.load()
+news_data = news_data.dropna(subset=['date'])
 
-df = title_data[0].page_content
+# print(news_data.isnull().sum())
 
-# 날짜와 내용 분리 정규식
-pattern = r"(May-\d{2}|Apr-\d{2}|Jun-\d{2})\s+([^\n]+)"
-regex_title = re.findall(pattern, df)
+# Unnamed: 0    1289
+# title            0
+# date             0
+# stock         2578
+# dtype: int64
 
-df = pd.DataFrame(regex_title, columns=['date', 'news_context'])    
-df.to_csv('UpStock-NewsData.csv', index=False)
+# title, date : 전처리할때 date stamp 변경, "나' 제거해야함(특수문자)
+# x = news_data
+# date, label 
+# y = price_data
 
-# df = pd.read_csv('test.csv')
+news_data['title'] = news_data['title'].str.replace('[^a-zA-z ]', '', regex=True)
+
+news_data['date'] = pd.to_datetime(news_data['date'], errors='coerce', utc=True)
+news_data['date'] = news_data['date'].dt.tz_localize(None).dt.date
+
+# print(news_data['date'])
+
+# print(price_data['date'])
+
+dd = news_data['title'].duplicated().sum()
+
+print(dd)

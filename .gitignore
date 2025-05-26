@@ -174,7 +174,7 @@ cython_debug/
 .pypirc
 
 # data set
-DataSet/*
+DataSets/*
 news.zip
 
 # tracking 필요없는 파일

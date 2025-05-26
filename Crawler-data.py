@@ -15,6 +15,7 @@ StockData.reset_index(inplace=True)
 StockData.columns = StockData.columns.droplevel(1)
 # open 가격 때보다 close 가격이 높으면 1 else 0
 StockData['label'] = np.where( StockData['Open'] < StockData['Close'], 1, 0)
+StockData.rename(columns={'Date' : 'date'}, inplace=True)
 StockData.to_csv('DataSets/stock_price_data.csv', index=False)
 
 # Get CNBC news
