@@ -8,7 +8,14 @@ import re
 
 
 # Get Yahoo Finance Data
-StockData = yf.download('^NDX', start='2009-02-14', end='2025-05-25')
+StockData = yf.download('^NDX', start='2009-02-14', end='2020-06-12')
+# 인덱스 초기화
+StockData.reset_index(inplace=True)
+# 멀티 플렉스 > 단일
+StockData.columns = StockData.columns.droplevel(1)
+# open 가격 때보다 close 가격이 높으면 1 else 0
+StockData['label'] = np.where( StockData['Open'] < StockData['Close'], 1, 0)
+StockData.to_csv('DataSets/stock_price_data.csv', index=False)
 
 # Get CNBC news
 # loader = WebBaseLoader('https://www.cnbc.com/world/?region=world')
@@ -31,8 +38,3 @@ StockData = yf.download('^NDX', start='2009-02-14', end='2025-05-25')
 # df.to_csv('UpStock-NewsData.csv', index=False)
 
 # df = pd.read_csv('test.csv')
-
-# open 가격 때보다 close 가격이 높으면 1 else 0
-StockData['label'] = np.where( StockData['Open'] < StockData['Close'], 1, 0)
-
-StockData.to_csv('DataSets/stock_price_data.csv')
