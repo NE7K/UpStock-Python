@@ -183,3 +183,6 @@ stock-news-scraping.py
 
 # save model
 SaveModel/*
+
+# Logs
+Logs/*

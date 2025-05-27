@@ -1,15 +1,28 @@
 import tensorflow as tf
 import pandas as pd
-from keras.preprocessing.text import Tokenizer
 import pickle
 import numpy as np
+import time
 
 # validation x > test data
 from sklearn.model_selection import train_test_split
 
-from keras.callbacks import EarlyStopping
+# pc import
+from tensorflow.keras.preprocessing.text import Tokenizer
 
-from keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.callbacks import EarlyStopping
+
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+from tensorflow.keras.callbacks import TensorBoard
+# mac import
+# from keras.preprocessing.text import Tokenizer
+
+# from keras.callbacks import EarlyStopping
+
+# from keras.preprocessing.sequence import pad_sequences
+
+# from keras.callbacks import TensorBoard
 
 # if 파일이 존재하면, 
 
@@ -37,6 +50,7 @@ except Exception as e:
 # print(news_data2)
 # print(news_data)
 
+# 중복 제거거
 news_data = news_data.dropna(subset=['date'])
 
 # print(news_data.isnull().sum())
@@ -75,7 +89,7 @@ unique_text.sort()
 # print(unique_text)
 
 # char level true 글자 단위, OOV 관례 : 나중에 추가되는 정규식에 없는 글자 정의
-tokenizer = Tokenizer(char_level=True, oov_token='<OOV>')
+tokenizer = Tokenizer(char_level=False, oov_token='<OOV>')
 
 # price data의 date 가져와서 merge
 price_data['date'] = pd.to_datetime(price_data['date']).dt.date
@@ -88,7 +102,7 @@ tokenizer.fit_on_texts(news_context_list)
 
 train_x = tokenizer.texts_to_sequences(news_context_list)
 
-# TODO 길이 열 추가해서 카운트해서 lenght column에 집어넣고
+# 길이 열 추가해서 카운트해서 lenght column에 집어넣고
 news_data['lenght'] = news_data['title'].str.len()
 # print(news_data['title'].str.len().max())
 
@@ -104,7 +118,7 @@ news_data['lenght'] = news_data['title'].str.len()
 # max      5.000000e+02
 # Name: title, dtype: float64
 
-train_x = pad_sequences(train_x, maxlen=120)
+train_x = pad_sequences(train_x, maxlen=110)
 train_y = np.array(merged['label'])
 # print(trian_y)
 
@@ -117,15 +131,34 @@ except Exception as e:
 trainx, valx, trainy, valy = train_test_split(train_x, train_y, test_size=0.2, random_state=42)
 
 model = tf.keras.models.Sequential([
-    tf.keras.layers.Embedding(len(tokenizer.index_word) + 1, 38),
-    tf.keras.layers.LSTM(100),
+    # out_dim 단어를 몇 차원으로 표기할건지 중간 : 128
+    tf.keras.layers.Embedding(len(tokenizer.index_word) + 1, 64),
+    
+    # return sequence 다음 레이어에서 모든 sequence 사용 가능하게
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True)),
+    
+    # 앞선 레이어에서 중요한 단어 (최대값 이용)
+    tf.keras.layers.GlobalAveragePooling1D(),
+    
+    tf.keras.layers.Dense(64, activation='relu'),
+    
+    # over fitting 방지
+    tf.keras.layers.Dropout(0.3),
+    
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
 
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
+# save log
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir='LogFile/Log{}'.format('_Model_' + str(int(time.time()))) )
+
 early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1)
 
-model.fit(trainx, trainy, validation_data=(valx, valy), batch_size=64, epochs=10, callbacks=early_stop)
+model.fit(trainx, trainy, validation_data=(valx, valy), batch_size=64, epochs=1, callbacks=[early_stop, tensorboard])
 
 model.save(model_path)
+
+model.summary()
+
+# tensorboard --logdir=logs/fit
