@@ -11,6 +11,9 @@ from keras.callbacks import EarlyStopping
 
 from keras.preprocessing.sequence import pad_sequences
 
+# if 파일이 존재하면, 
+
+
 price_path = 'DataSets/stock_price_data.csv'
 news_path = 'DataSets/analyst_ratings_processed.csv'
 tokenizer_path = 'SaveModel/upstock_tokenizer.pickle'
@@ -73,7 +76,7 @@ unique_text.sort()
 # print(unique_text)
 
 # char level true 글자 단위, OOV 관례 : 나중에 추가되는 정규식에 없는 글자 정의
-tokenizer = Tokenizer(char_level=True, oov_token='<OOV>')
+tokenizer = Tokenizer(char_level=False, oov_token='<OOV>')
 
 # price data의 date 가져와서 merge
 price_data['date'] = pd.to_datetime(price_data['date']).dt.date
@@ -112,6 +115,6 @@ model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy']
 
 early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1)
 
-model.fit(trainx, trainy, validation_data=(valx, valy), batch_size=64, epochs=1, callbacks=early_stop)
+model.fit(trainx, trainy, validation_data=(valx, valy), batch_size=128, epochs=1, callbacks=early_stop)
 
 model.save(model_path)
