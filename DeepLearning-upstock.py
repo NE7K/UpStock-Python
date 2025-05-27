@@ -83,7 +83,7 @@ tokenizer = Tokenizer(char_level=False, oov_token='<OOV>')
 price_data['date'] = pd.to_datetime(price_data['date']).dt.date
 merged = pd.merge(news_data, price_data[['date', 'Close', 'High', 'Low', 'Open', 'Volume', 'label']], on='date', how='inner')
 
-merged.to_csv('test.csv', index=False)
+# merged.to_csv('test.csv', index=False)
 
 # 글자 치환
 news_context_list = merged['title'].tolist()
@@ -122,6 +122,7 @@ news_data['lenght'] = news_data['title'].str.len()
 
 chart = merged[['Low', 'High', 'Open', 'Close', 'Volume']]
 labels = np.array(merged['label'])
+# 따로 전처리한 title
 titles = merged['title']
 titles = pad_sequences(train_x, maxlen=110)
 
@@ -162,15 +163,15 @@ x_volume = volume_preprocessing(volume_input)
 # using functional api
 model_input = tf.keras.Input(shape=(110,), name='model_input')
 
-x1 = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=64)(model_input)
-x2 = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True))(x1)
-x3 = tf.keras.layers.GlobalMaxPool1D()(x2)
+embedding = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=64)(model_input)
+bidirectional = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True))(embedding)
+maxpool1d = tf.keras.layers.GlobalMaxPool1D()(bidirectional)
 
-concat_layer = tf.keras.layers.Concatenate()([x_low, x_high, x_open, x_close, x_volume, x3])
+concat_layer = tf.keras.layers.Concatenate()([x_low, x_high, x_open, x_close, x_volume, maxpool1d])
 
-x4 = tf.keras.layers.Dense(64, activation='relu')(concat_layer)
-x5 = tf.keras.layers.Dropout(0.3)(x4)
-model_output = tf.keras.layers.Dense(1, activation='sigmoid')(x5)
+dense1 = tf.keras.layers.Dense(64, activation='relu')(concat_layer)
+dropout1 = tf.keras.layers.Dropout(0.3)(dense1)
+model_output = tf.keras.layers.Dense(1, activation='sigmoid')(dropout1)
 
 model = tf.keras.Model(inputs=[model_input, low_input, high_input, open_input, close_input, volume_input], outputs=model_output)
 
