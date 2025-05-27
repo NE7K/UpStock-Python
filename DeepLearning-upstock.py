@@ -13,7 +13,6 @@ from keras.preprocessing.sequence import pad_sequences
 
 # if 파일이 존재하면, 
 
-
 price_path = 'DataSets/stock_price_data.csv'
 news_path = 'DataSets/analyst_ratings_processed.csv'
 tokenizer_path = 'SaveModel/upstock_tokenizer.pickle'
@@ -76,7 +75,7 @@ unique_text.sort()
 # print(unique_text)
 
 # char level true 글자 단위, OOV 관례 : 나중에 추가되는 정규식에 없는 글자 정의
-tokenizer = Tokenizer(char_level=False, oov_token='<OOV>')
+tokenizer = Tokenizer(char_level=True, oov_token='<OOV>')
 
 # price data의 date 가져와서 merge
 price_data['date'] = pd.to_datetime(price_data['date']).dt.date
@@ -93,7 +92,19 @@ train_x = tokenizer.texts_to_sequences(news_context_list)
 news_data['lenght'] = news_data['title'].str.len()
 # print(news_data['title'].str.len().max())
 
-train_x = pad_sequences(train_x, maxlen=500)
+# print(news_data['title'].str.len().describe())
+
+# count    1.399180e+06
+# mean     6.991809e+01
+# std      3.899507e+01
+# min      1.000000e+00
+# 25%      4.500000e+01
+# 50%      6.100000e+01
+# 75%      8.200000e+01
+# max      5.000000e+02
+# Name: title, dtype: float64
+
+train_x = pad_sequences(train_x, maxlen=120)
 train_y = np.array(merged['label'])
 # print(trian_y)
 
@@ -115,6 +126,6 @@ model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy']
 
 early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1)
 
-model.fit(trainx, trainy, validation_data=(valx, valy), batch_size=128, epochs=1, callbacks=early_stop)
+model.fit(trainx, trainy, validation_data=(valx, valy), batch_size=64, epochs=10, callbacks=early_stop)
 
 model.save(model_path)
