@@ -17,6 +17,9 @@ StockData['label'] = np.where( StockData['Open'] < StockData['Close'], 1, 0)
 StockData.rename(columns={'Date' : 'date'}, inplace=True)
 StockData.to_csv('DataSets/stock_price_data.csv', index=False)
 
+# RSI, MACD
+# StockData['Rsi'] = 
+
 # Get CNBC news
 # loader = WebBaseLoader('https://www.cnbc.com/world/?region=world')
 # title_data = loader.load()
