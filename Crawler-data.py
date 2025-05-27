@@ -6,7 +6,6 @@ import numpy as np
 # note regex import
 import re
 
-
 # Get Yahoo Finance Data
 StockData = yf.download('^NDX', start='2009-02-14', end='2020-06-12')
 # 인덱스 초기화
