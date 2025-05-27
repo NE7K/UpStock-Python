@@ -181,3 +181,5 @@ news.zip
 .DS_Store
 stock-news-scraping.py
 
+# save model
+SaveModel/*
