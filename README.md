@@ -89,6 +89,10 @@ Non-trainable params: 15
 
 <img width="100%" alt="system diagram" src="https://github.com/user-attachments/assets/1fe24cfe-0da4-4d8e-bc22-7ada93908529" />
 
+## System Detail Diagram
+
+<img width="100%" alt="UserFlow" src="https://github.com/user-attachments/assets/ed7e5638-796c-4820-8bde-9148ea4b2da3" />
+
 ## 🔍 WBS
 
 -
@@ -98,6 +102,7 @@ Non-trainable params: 15
 The following diagram illustrates the user flow within the UpStock application :
 
 <img width="100%" alt="UserFlow" src="https://github.com/user-attachments/assets/4379bea8-8f86-4f87-b6f6-7e2da1a93823" />
+
 
 ## 📧 Contact
 
