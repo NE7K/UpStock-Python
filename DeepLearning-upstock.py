@@ -8,24 +8,18 @@ import time
 from sklearn.model_selection import train_test_split
 
 # pc import
-from tensorflow.keras.preprocessing.text import Tokenizer
-
-from tensorflow.keras.callbacks import EarlyStopping
-
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-
-from tensorflow.keras.callbacks import TensorBoard
+# from tensorflow.keras.preprocessing.text import Tokenizer
+# from tensorflow.keras.callbacks import EarlyStopping
+# from tensorflow.keras.preprocessing.sequence import pad_sequences
+# from tensorflow.keras.callbacks import TensorBoard
 
 # mac import
-# from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.text import Tokenizer
+from keras.callbacks import EarlyStopping
+from keras.preprocessing.sequence import pad_sequences
+from keras.callbacks import TensorBoard
 
-# from keras.callbacks import EarlyStopping
-
-# from keras.preprocessing.sequence import pad_sequences
-
-# from keras.callbacks import TensorBoard
-
-# TODO if 파일이 존재하면, 
+# TODO if file 처리
 price_path = 'DataSets/stock_price_data.csv'
 news_path = 'DataSets/analyst_ratings_processed.csv'
 tokenizer_path = 'SaveModel/upstock_tokenizer.pickle'
@@ -33,7 +27,6 @@ model_path = 'SaveModel/upstock_model.keras'
 
 # 완전 초기 모델에 사용한 데이터셋
 # news_data = pd.read_csv('DataSets/UpStock-NewsData.csv')
-
 # news_data = pd.read_csv('DataSets/raw_partner_headlines.csv')
 # news_data2 = pd.read_csv('DataSets/raw_analyst_ratings.csv')
 
@@ -44,15 +37,12 @@ model_path = 'SaveModel/upstock_model.keras'
 try:
     price_data = pd.read_csv(price_path)
 except Exception as e:
-    print('주식 가격 csv 파일 불러오기 실패')
+    print(f'주식 가격 csv 파일 불러오기 실패 {e}')
 
 try:
     news_data = pd.read_csv(news_path)
 except Exception as e:
-    print('뉴스 기사 불러오기 실패')
-
-# Part Preprocessing
-news_data = news_data.dropna(subset=['date'])
+    print(f'뉴스 기사 불러오기 실패 {e}')
 
 # print(news_data.isnull().sum())
 # Unnamed: 0    1289
@@ -61,39 +51,8 @@ news_data = news_data.dropna(subset=['date'])
 # stock         2578
 # dtype: int64
 
-news_data['title'] = news_data['title'].str.replace('[^a-zA-Z0-9 ]', '', regex=True)
-# utc 시간 고려
-news_data['date'] = pd.to_datetime(news_data['date'], errors='coerce', utc=True)
-news_data['date'] = news_data['date'].dt.tz_localize(None).dt.date
-
-unique_text = news_data['title'].tolist()
-# 문자열 합침
-unique_text = ''.join(unique_text)
-# set 중복 제거 후 리스트 변환
-unique_text = list(set(unique_text))
-# 유니코드 순으로 나열
-unique_text.sort()
-
-# print(unique_text)
-
-# char level true 글자 단위, OOV 관례 : 나중에 추가되는 정규식에 없는 글자 정의
-tokenizer = Tokenizer(char_level=False, oov_token='<OOV>')
-
-# price data의 date 가져와서 merge
-price_data['date'] = pd.to_datetime(price_data['date']).dt.date
-merged = pd.merge(news_data, price_data[['date', 'Close', 'High', 'Low', 'Open', 'Volume', 'label']], on='date', how='inner')
-
-# merged.to_csv('test.csv', index=False)
-
-# 글자 치환
-news_context_list = merged['title'].tolist()
-tokenizer.fit_on_texts(news_context_list)
-# print(len(tokenizer.index_word))
-
-train_x = tokenizer.texts_to_sequences(news_context_list)
-
 # 길이 열 추가해서 카운트해서 lenght column에 집어넣고
-news_data['lenght'] = news_data['title'].str.len()
+# news_data['lenght'] = news_data['title'].str.len()
 # print(news_data['title'].str.len().max())
 # print(news_data['title'].str.len().describe())
 
@@ -120,18 +79,49 @@ news_data['lenght'] = news_data['title'].str.len()
 #     tf.keras.layers.Dense(1, activation='sigmoid')
 # ])
 
+# Part Preprocessing
+news_data = news_data.dropna(subset=['date'])
+news_data['title'] = news_data['title'].str.replace('[^a-zA-Z0-9 ]', '', regex=True)
+# utc 시간 고려
+news_data['date'] = pd.to_datetime(news_data['date'], errors='coerce', utc=True)
+news_data['date'] = news_data['date'].dt.tz_localize(None).dt.date
+
+unique_text = news_data['title'].tolist()
+# 문자열 합침
+unique_text = ''.join(unique_text)
+# set 중복 제거 후 리스트 변환
+unique_text = list(set(unique_text))
+# 유니코드 순으로 나열
+unique_text.sort()
+
+# char level true 글자 단위, OOV 관례 : 나중에 추가되는 정규식에 없는 글자 정의
+tokenizer = Tokenizer(char_level=False, oov_token='<OOV>')
+
+# price data의 date 가져와서 merge
+price_data['date'] = pd.to_datetime(price_data['date']).dt.date
+merged = pd.merge(news_data, price_data[['date', 'Close', 'High', 'Low', 'Open', 'Volume', 'label']], on='date', how='inner')
+
+# merged.to_csv('DataSets/Preprocessing.csv', index=False)
+
+# 글자 치환
+# 1. 타이틀을 리스트로
+titles = merged['title'].tolist()
+# 2. 타이틀 fit on text
+tokenizer.fit_on_texts(titles)
+print(len(tokenizer.index_word))
+# 3. 타이틀 text to sequences
+titles = tokenizer.texts_to_sequences(titles)
+# 4. pad sequences
+titles = pad_sequences(titles, maxlen=110)
 chart = merged[['Low', 'High', 'Open', 'Close', 'Volume']]
 labels = np.array(merged['label'])
-# 따로 전처리한 title
-titles = merged['title']
-titles = pad_sequences(train_x, maxlen=110)
 
-# text, chart, label
+# text, chart, label 데이터 쪼개기 0.2
 X_train_text, X_val_text, X_train_chart, X_val_chart, y_train, y_val = train_test_split(
     titles, chart, labels, test_size=0.2, random_state=42
 )
 
-# nomalization
+# nomalization, 전체 데이터에서 하나의 평균과 분산을 사용
 low_preprocessing = tf.keras.layers.Normalization(axis=None)
 low_preprocessing.adapt(np.array(merged['Low']))
 high_preprocessing = tf.keras.layers.Normalization(axis=None)
@@ -162,19 +152,15 @@ x_volume = volume_preprocessing(volume_input)
 
 # using functional api
 model_input = tf.keras.Input(shape=(110,), name='model_input')
-
 embedding = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=64)(model_input)
 bidirectional = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True))(embedding)
 maxpool1d = tf.keras.layers.GlobalMaxPool1D()(bidirectional)
-
 concat_layer = tf.keras.layers.Concatenate()([x_low, x_high, x_open, x_close, x_volume, maxpool1d])
-
 dense1 = tf.keras.layers.Dense(64, activation='relu')(concat_layer)
 dropout1 = tf.keras.layers.Dropout(0.3)(dense1)
 model_output = tf.keras.layers.Dense(1, activation='sigmoid')(dropout1)
 
 model = tf.keras.Model(inputs=[model_input, low_input, high_input, open_input, close_input, volume_input], outputs=model_output)
-
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 train_inputs = {
@@ -201,10 +187,7 @@ early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=
 
 # train
 model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=64, epochs=1, callbacks=[early_stop, tensorboard])
-
 model.summary()
-
-# save
 model.save(model_path)
 
 try:
