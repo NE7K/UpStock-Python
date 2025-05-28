@@ -8,16 +8,16 @@ import time
 from sklearn.model_selection import train_test_split
 
 # pc import
-# from tensorflow.keras.preprocessing.text import Tokenizer
-# from tensorflow.keras.callbacks import EarlyStopping
-# from tensorflow.keras.preprocessing.sequence import pad_sequences
-# from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.callbacks import TensorBoard
 
 # mac import
-from keras.preprocessing.text import Tokenizer
-from keras.callbacks import EarlyStopping
-from keras.preprocessing.sequence import pad_sequences
-from keras.callbacks import TensorBoard
+# from keras.preprocessing.text import Tokenizer
+# from keras.callbacks import EarlyStopping
+# from keras.preprocessing.sequence import pad_sequences
+# from keras.callbacks import TensorBoard
 
 # TODO if file 처리
 price_path = 'DataSets/stock_price_data.csv'
@@ -152,13 +152,17 @@ x_volume = volume_preprocessing(volume_input)
 
 # using functional api
 model_input = tf.keras.Input(shape=(110,), name='model_input')
-embedding = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=64)(model_input)
+embedding = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=128)(model_input)
 bidirectional = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True))(embedding)
 maxpool1d = tf.keras.layers.GlobalMaxPool1D()(bidirectional)
 concat_layer = tf.keras.layers.Concatenate()([x_low, x_high, x_open, x_close, x_volume, maxpool1d])
+
 dense1 = tf.keras.layers.Dense(64, activation='relu')(concat_layer)
 dropout1 = tf.keras.layers.Dropout(0.3)(dense1)
-model_output = tf.keras.layers.Dense(1, activation='sigmoid')(dropout1)
+dense2 = tf.keras.layers.Dense(64, activation='relu')(dropout1)
+dropout2 = tf.keras.layers.Dropout(0.3)(dense2)
+dense3 = tf.keras.layers.Dense(32, activation='relu')(dropout2)
+model_output = tf.keras.layers.Dense(1, activation='sigmoid')(dense3)
 
 model = tf.keras.Model(inputs=[model_input, low_input, high_input, open_input, close_input, volume_input], outputs=model_output)
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -186,7 +190,7 @@ tensorboard = tf.keras.callbacks.TensorBoard(log_dir='LogFile/Log{}'.format('_Mo
 early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1)
 
 # train
-model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=64, epochs=1, callbacks=[early_stop, tensorboard])
+model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=32, epochs=50, callbacks=[early_stop, tensorboard])
 model.summary()
 model.save(model_path)
 
