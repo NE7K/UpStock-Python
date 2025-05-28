@@ -48,6 +48,43 @@ ex)
 
 ## Training result and layers status
 
+```
+34340/34340 [==============================] - 1073s 31ms/step - loss: 0.3354 - accuracy: 0.8275 - val_loss: 0.1118 - val_accuracy: 0.9781
+Epoch 2/50
+34340/34340 [==============================] - 1103s 32ms/step - loss: 0.1983 - accuracy: 0.9155 - val_loss: 0.1211 - val_accuracy: 0.9481
+Epoch 3/50
+34340/34340 [==============================] - 1114s 32ms/step - loss: 0.1747 - accuracy: 0.9270 - val_loss: 0.1039 - val_accuracy: 0.9582
+Epoch 4/50
+34340/34340 [==============================] - 1097s 32ms/step - loss: 0.1548 - accuracy: 0.9372 - val_loss: 0.1306 - val_accuracy: 0.9385
+Epoch 5/50
+34340/34340 [==============================] - 1104s 32ms/step - loss: 0.1356 - accuracy: 0.9455 - val_loss: 0.1020 - val_accuracy: 0.9627
+Epoch 6/50
+34340/34340 [==============================] - 1103s 32ms/step - loss: 0.1250 - accuracy: 0.9504 - val_loss: 0.1365 - val_accuracy: 0.9373
+Epoch 7/50
+34340/34340 [==============================] - 1105s 32ms/step - loss: 0.1153 - accuracy: 0.9547 - val_loss: 0.0913 - val_accuracy: 0.9686
+Epoch 8/50
+34340/34340 [==============================] - 1114s 32ms/step - loss: 0.1079 - accuracy: 0.9577 - val_loss: 0.1228 - val_accuracy: 0.9530
+Epoch 9/50
+34340/34340 [==============================] - 1111s 32ms/step - loss: 0.1017 - accuracy: 0.9605 - val_loss: 0.1415 - val_accuracy: 0.9391
+Epoch 10/50
+34340/34340 [==============================] - 1098s 32ms/step - loss: 0.0930 - accuracy: 0.9640 - val_loss: 0.0887 - val_accuracy: 0.9686
+Epoch 11/50
+34340/34340 [==============================] - 1095s 32ms/step - loss: 0.0895 - accuracy: 0.9657 - val_loss: 0.1168 - val_accuracy: 0.9578
+Epoch 12/50
+34340/34340 [==============================] - 1087s 32ms/step - loss: 0.0856 - accuracy: 0.9670 - val_loss: 0.1324 - val_accuracy: 0.9569
+Epoch 13/50
+34339/34340 [============================>.] - ETA: 0s - loss: 0.0814 - accuracy: 0.9689Restoring model weights from the end of the best epoch: 10.
+34340/34340 [==============================] - 1096s 32ms/step - loss: 0.0814 - accuracy: 0.9689 - val_loss: 0.1181 - val_accuracy: 0.9597
+Epoch 13: early stopping
+
+```
+
+```
+Total params: 27,699,344
+Trainable params: 27,699,329
+Non-trainable params: 15
+```
+
 ## System configuration diagram
 
 <img width="100%" alt="system diagram" src="https://github.com/user-attachments/assets/1fe24cfe-0da4-4d8e-bc22-7ada93908529" />
