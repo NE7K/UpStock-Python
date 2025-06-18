@@ -97,12 +97,6 @@ Non-trainable params: 15
 
 -
 
-## 📊 Target User Flow
-
-The following diagram illustrates the user flow within the UpStock application :
-
-<img width="100%" alt="UserFlow" src="https://github.com/user-attachments/assets/4379bea8-8f86-4f87-b6f6-7e2da1a93823" />
-
 
 ## 📧 Contact
 
