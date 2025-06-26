@@ -8,16 +8,17 @@ import time
 from sklearn.model_selection import train_test_split
 
 # pc import
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.callbacks import TensorBoard
+# from tensorflow.keras.preprocessing.text import Tokenizer
+# from tensorflow.keras.callbacks import EarlyStopping
+# from tensorflow.keras.preprocessing.sequence import pad_sequences
+# from tensorflow.keras.callbacks import TensorBoard
 
 # mac import
-# from keras.preprocessing.text import Tokenizer
-# from keras.callbacks import EarlyStopping
-# from keras.preprocessing.sequence import pad_sequences
-# from keras.callbacks import TensorBoard
+from keras.preprocessing.text import Tokenizer
+from keras.callbacks import EarlyStopping
+from keras.preprocessing.sequence import pad_sequences
+from keras.callbacks import TensorBoard
+
 
 # TODO if file 처리
 price_path = 'DataSets/stock_price_data.csv'
@@ -116,6 +117,9 @@ titles = pad_sequences(titles, maxlen=110)
 chart = merged[['Low', 'High', 'Open', 'Close', 'Volume']]
 labels = np.array(merged['label'])
 
+print(merged)
+
+exit()
 # text, chart, label 데이터 쪼개기 0.2
 X_train_text, X_val_text, X_train_chart, X_val_chart, y_train, y_val = train_test_split(
     titles, chart, labels, test_size=0.2, random_state=42
