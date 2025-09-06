@@ -26,6 +26,9 @@ news_path = 'DataSets/analyst_ratings_processed.csv'
 tokenizer_path = 'SaveModel/upstock_tokenizer.pickle'
 model_path = 'SaveModel/upstock_model.keras'
 
+# predict
+from keras.models import load_model
+
 # 완전 초기 모델에 사용한 데이터셋
 # news_data = pd.read_csv('DataSets/UpStock-NewsData.csv')
 # news_data = pd.read_csv('DataSets/raw_partner_headlines.csv')
@@ -82,10 +85,33 @@ except Exception as e:
 
 # save model exists => predict
 # save model not exists => DeepLearning
-
 if os.path.exists(model_path) and os.path.exists(tokenizer_path):
     print('Founded Save Model and Tokenizer')
     # TODO here predict
+    
+    # load save model
+    model = load_model(model_path)
+    
+    # load tokenizer = preprocessing word
+    with open(tokenizer_path, 'rb') as f:
+        tokenizer = pickle.load(f)
+        
+    # Added new text preprocessing
+    # 2025-09-07 korean time 00:26 / https://finance.yahoo.com/news/bad-economic-news-might-actually-be-bad-again-100058088.html
+    # 실업률 지표의 수치 상승으로 (실업률 상승) 부정적인 견해를 가진 뉴스보도
+    predict_title = ['Bad economic news might actually be bad again']
+    predict_title = tokenizer.texts_to_sequences(predict_title)
+    predict_title = pad_sequences(predict_title, maxlen=110)
+    
+    # Added new stock price data
+    predict_price = {
+        'model_input' : predict_title,
+        'Low' : np.array(X_train_chart['Low']).reshape(-1, 1),
+        'High' : np.array(X_train_chart['High']).reshape(-1, 1),
+        'Open' : np.array(X_train_chart['Open']).reshape(-1, 1),
+        'Close' : np.array(X_train_chart['Close']).reshape(-1, 1),
+        'Volume' : np.array(X_train_chart['Volume']).reshape(-1, 1),
+    }
     
 else:
     # Part Preprocessing
