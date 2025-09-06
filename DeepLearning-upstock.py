@@ -3,6 +3,7 @@ import pandas as pd
 import pickle
 import numpy as np
 import time
+import os
 
 # validation x > test data
 from sklearn.model_selection import train_test_split
@@ -18,7 +19,6 @@ from keras.preprocessing.text import Tokenizer
 from keras.callbacks import EarlyStopping
 from keras.preprocessing.sequence import pad_sequences
 from keras.callbacks import TensorBoard
-
 
 # TODO if file 처리
 price_path = 'DataSets/stock_price_data.csv'
@@ -80,126 +80,134 @@ except Exception as e:
 #     tf.keras.layers.Dense(1, activation='sigmoid')
 # ])
 
-# Part Preprocessing
-news_data = news_data.dropna(subset=['date'])
-news_data['title'] = news_data['title'].str.replace('[^a-zA-Z0-9 ]', '', regex=True)
-# utc 시간 고려
-news_data['date'] = pd.to_datetime(news_data['date'], errors='coerce', utc=True)
-news_data['date'] = news_data['date'].dt.tz_localize(None).dt.date
+# save model exists => predict
+# save model not exists => DeepLearning
 
-unique_text = news_data['title'].tolist()
-# 문자열 합침
-unique_text = ''.join(unique_text)
-# set 중복 제거 후 리스트 변환
-unique_text = list(set(unique_text))
-# 유니코드 순으로 나열
-unique_text.sort()
+if os.path.exists(model_path) and os.path.exists(tokenizer_path):
+    print('Founded Save Model and Tokenizer')
+    # TODO here predict
+    
+else:
+    # Part Preprocessing
+    news_data = news_data.dropna(subset=['date'])
+    news_data['title'] = news_data['title'].str.replace('[^a-zA-Z0-9 ]', '', regex=True)
+    # utc 시간 고려
+    news_data['date'] = pd.to_datetime(news_data['date'], errors='coerce', utc=True)
+    news_data['date'] = news_data['date'].dt.tz_localize(None).dt.date
 
-# char level true 글자 단위, OOV 관례 : 나중에 추가되는 정규식에 없는 글자 정의
-tokenizer = Tokenizer(char_level=False, oov_token='<OOV>')
+    unique_text = news_data['title'].tolist()
+    # 문자열 합침
+    unique_text = ''.join(unique_text)
+    # set 중복 제거 후 리스트 변환
+    unique_text = list(set(unique_text))
+    # 유니코드 순으로 나열
+    unique_text.sort()
 
-# price data의 date 가져와서 merge
-price_data['date'] = pd.to_datetime(price_data['date']).dt.date
-merged = pd.merge(news_data, price_data[['date', 'Close', 'High', 'Low', 'Open', 'Volume', 'label']], on='date', how='inner')
+    # char level true 글자 단위, OOV 관례 : 나중에 추가되는 정규식에 없는 글자 정의
+    tokenizer = Tokenizer(char_level=False, oov_token='<OOV>')
 
-# merged.to_csv('DataSets/Preprocessing.csv', index=False)
+    # price data의 date 가져와서 merge
+    price_data['date'] = pd.to_datetime(price_data['date']).dt.date
+    merged = pd.merge(news_data, price_data[['date', 'Close', 'High', 'Low', 'Open', 'Volume', 'label']], on='date', how='inner')
 
-# 글자 치환
-# 1. 타이틀을 리스트로
-titles = merged['title'].tolist()
-# 2. 타이틀 fit on text
-tokenizer.fit_on_texts(titles)
-print(len(tokenizer.index_word))
-# 3. 타이틀 text to sequences
-titles = tokenizer.texts_to_sequences(titles)
-# 4. pad sequences
-titles = pad_sequences(titles, maxlen=110)
-chart = merged[['Low', 'High', 'Open', 'Close', 'Volume']]
-labels = np.array(merged['label'])
+    # merged.to_csv('DataSets/Preprocessing.csv', index=False)
 
-print(merged)
+    # 글자 치환
+    # 1. 타이틀을 리스트로
+    titles = merged['title'].tolist()
+    # 2. 타이틀 fit on text
+    tokenizer.fit_on_texts(titles)
+    print(len(tokenizer.index_word))
+    # 3. 타이틀 text to sequences
+    titles = tokenizer.texts_to_sequences(titles)
+    # 4. pad sequences
+    titles = pad_sequences(titles, maxlen=110)
+    chart = merged[['Low', 'High', 'Open', 'Close', 'Volume']]
+    labels = np.array(merged['label'])
 
-exit()
-# text, chart, label 데이터 쪼개기 0.2
-X_train_text, X_val_text, X_train_chart, X_val_chart, y_train, y_val = train_test_split(
-    titles, chart, labels, test_size=0.2, random_state=42
-)
+    print(merged)
 
-# nomalization, 전체 데이터에서 하나의 평균과 분산을 사용
-low_preprocessing = tf.keras.layers.Normalization(axis=None)
-low_preprocessing.adapt(np.array(merged['Low']))
-high_preprocessing = tf.keras.layers.Normalization(axis=None)
-high_preprocessing.adapt(np.array(merged['High']))
-open_preprocessing = tf.keras.layers.Normalization(axis=None)
-open_preprocessing.adapt(np.array(merged['Open']))
-close_preprocessing = tf.keras.layers.Normalization(axis=None)
-close_preprocessing.adapt(np.array(merged['Close']))
-volume_preprocessing = tf.keras.layers.Normalization(axis=None)
-volume_preprocessing.adapt(np.array(merged['Volume']))
+    exit()
+    # text, chart, label 데이터 쪼개기 0.2
+    X_train_text, X_val_text, X_train_chart, X_val_chart, y_train, y_val = train_test_split(
+        titles, chart, labels, test_size=0.2, random_state=42
+    )
 
-# nomalization result print
-# normalized_close = close_preprocessing(np.array(merged['Close']))
-# print(normalized_close.numpy())
+    # nomalization, 전체 데이터에서 하나의 평균과 분산을 사용
+    low_preprocessing = tf.keras.layers.Normalization(axis=None)
+    low_preprocessing.adapt(np.array(merged['Low']))
+    high_preprocessing = tf.keras.layers.Normalization(axis=None)
+    high_preprocessing.adapt(np.array(merged['High']))
+    open_preprocessing = tf.keras.layers.Normalization(axis=None)
+    open_preprocessing.adapt(np.array(merged['Open']))
+    close_preprocessing = tf.keras.layers.Normalization(axis=None)
+    close_preprocessing.adapt(np.array(merged['Close']))
+    volume_preprocessing = tf.keras.layers.Normalization(axis=None)
+    volume_preprocessing.adapt(np.array(merged['Volume']))
 
-# create input
-low_input = tf.keras.Input(shape=(1, ), name='Low')
-high_input = tf.keras.Input(shape=(1, ), name='High')
-open_input = tf.keras.Input(shape=(1, ), name='Open')
-close_input = tf.keras.Input(shape=(1, ), name='Close')
-volume_input = tf.keras.Input(shape=(1, ), name='Volume')
+    # nomalization result print
+    # normalized_close = close_preprocessing(np.array(merged['Close']))
+    # print(normalized_close.numpy())
 
-x_low = low_preprocessing(low_input)
-x_high = high_preprocessing(high_input)
-x_open = open_preprocessing(open_input)
-x_close = close_preprocessing(close_input)
-x_volume = volume_preprocessing(volume_input)
+    # create input
+    low_input = tf.keras.Input(shape=(1, ), name='Low')
+    high_input = tf.keras.Input(shape=(1, ), name='High')
+    open_input = tf.keras.Input(shape=(1, ), name='Open')
+    close_input = tf.keras.Input(shape=(1, ), name='Close')
+    volume_input = tf.keras.Input(shape=(1, ), name='Volume')
 
-# using functional api
-model_input = tf.keras.Input(shape=(110,), name='model_input')
-embedding = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=128)(model_input)
-bidirectional = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True))(embedding)
-maxpool1d = tf.keras.layers.GlobalMaxPool1D()(bidirectional)
-concat_layer = tf.keras.layers.Concatenate()([x_low, x_high, x_open, x_close, x_volume, maxpool1d])
+    x_low = low_preprocessing(low_input)
+    x_high = high_preprocessing(high_input)
+    x_open = open_preprocessing(open_input)
+    x_close = close_preprocessing(close_input)
+    x_volume = volume_preprocessing(volume_input)
 
-dense1 = tf.keras.layers.Dense(64, activation='relu')(concat_layer)
-dropout1 = tf.keras.layers.Dropout(0.3)(dense1)
-dense2 = tf.keras.layers.Dense(64, activation='relu')(dropout1)
-dropout2 = tf.keras.layers.Dropout(0.3)(dense2)
-dense3 = tf.keras.layers.Dense(32, activation='relu')(dropout2)
-model_output = tf.keras.layers.Dense(1, activation='sigmoid')(dense3)
+    # using functional api
+    model_input = tf.keras.Input(shape=(110,), name='model_input')
+    embedding = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=128)(model_input)
+    bidirectional = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True))(embedding)
+    maxpool1d = tf.keras.layers.GlobalMaxPool1D()(bidirectional)
+    concat_layer = tf.keras.layers.Concatenate()([x_low, x_high, x_open, x_close, x_volume, maxpool1d])
 
-model = tf.keras.Model(inputs=[model_input, low_input, high_input, open_input, close_input, volume_input], outputs=model_output)
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    dense1 = tf.keras.layers.Dense(64, activation='relu')(concat_layer)
+    dropout1 = tf.keras.layers.Dropout(0.3)(dense1)
+    dense2 = tf.keras.layers.Dense(64, activation='relu')(dropout1)
+    dropout2 = tf.keras.layers.Dropout(0.3)(dense2)
+    dense3 = tf.keras.layers.Dense(32, activation='relu')(dropout2)
+    model_output = tf.keras.layers.Dense(1, activation='sigmoid')(dense3)
 
-train_inputs = {
-    'model_input' : X_train_text,
-    'Low' : np.array(X_train_chart['Low']).reshape(-1, 1),
-    'High' : np.array(X_train_chart['High']).reshape(-1, 1),
-    'Open' : np.array(X_train_chart['Open']).reshape(-1, 1),
-    'Close' : np.array(X_train_chart['Close']).reshape(-1, 1),
-    'Volume' : np.array(X_train_chart['Volume']).reshape(-1, 1),
-}
+    model = tf.keras.Model(inputs=[model_input, low_input, high_input, open_input, close_input, volume_input], outputs=model_output)
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-val_inputs = {
-    'model_input': X_val_text,
-    'Low': np.array(X_val_chart['Low']).reshape(-1, 1),
-    'High': np.array(X_val_chart['High']).reshape(-1, 1),
-    'Open': np.array(X_val_chart['Open']).reshape(-1, 1),
-    'Close': np.array(X_val_chart['Close']).reshape(-1, 1),
-    'Volume': np.array(X_val_chart['Volume']).reshape(-1, 1),
-}
+    train_inputs = {
+        'model_input' : X_train_text,
+        'Low' : np.array(X_train_chart['Low']).reshape(-1, 1),
+        'High' : np.array(X_train_chart['High']).reshape(-1, 1),
+        'Open' : np.array(X_train_chart['Open']).reshape(-1, 1),
+        'Close' : np.array(X_train_chart['Close']).reshape(-1, 1),
+        'Volume' : np.array(X_train_chart['Volume']).reshape(-1, 1),
+    }
 
-# Part callback | tensorboard --logdir=LogFile/
-tensorboard = tf.keras.callbacks.TensorBoard(log_dir='LogFile/Log{}'.format('_Model_' + str(int(time.time()))) )
-early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1)
+    val_inputs = {
+        'model_input': X_val_text,
+        'Low': np.array(X_val_chart['Low']).reshape(-1, 1),
+        'High': np.array(X_val_chart['High']).reshape(-1, 1),
+        'Open': np.array(X_val_chart['Open']).reshape(-1, 1),
+        'Close': np.array(X_val_chart['Close']).reshape(-1, 1),
+        'Volume': np.array(X_val_chart['Volume']).reshape(-1, 1),
+    }
 
-# train
-model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=32, epochs=50, callbacks=[early_stop, tensorboard])
-model.summary()
-model.save(model_path)
+    # Part callback | tensorboard --logdir=LogFile/
+    tensorboard = tf.keras.callbacks.TensorBoard(log_dir='LogFile/Log{}'.format('_Model_' + str(int(time.time()))) )
+    early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1)
 
-try:
-    with open(tokenizer_path, 'wb') as f:
-        pickle.dump(tokenizer, f)
-except Exception as e:
-    print('tokenizer 저장 실패')
+    # train
+    model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=32, epochs=50, callbacks=[early_stop, tensorboard])
+    model.summary()
+    model.save(model_path)
+
+    try:
+        with open(tokenizer_path, 'wb') as f:
+            pickle.dump(tokenizer, f)
+    except Exception as e:
+        print('tokenizer 저장 실패')
