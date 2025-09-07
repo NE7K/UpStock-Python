@@ -9,16 +9,16 @@ import os
 from sklearn.model_selection import train_test_split
 
 # pc import
-# from tensorflow.keras.preprocessing.text import Tokenizer
-# from tensorflow.keras.callbacks import EarlyStopping
-# from tensorflow.keras.preprocessing.sequence import pad_sequences
-# from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.callbacks import TensorBoard
 
 # mac import
-from keras.preprocessing.text import Tokenizer
-from keras.callbacks import EarlyStopping
-from keras.preprocessing.sequence import pad_sequences
-from keras.callbacks import TensorBoard
+# from keras.preprocessing.text import Tokenizer
+# from keras.callbacks import EarlyStopping
+# from keras.preprocessing.sequence import pad_sequences
+# from keras.callbacks import TensorBoard
 
 # TODO if file 처리
 price_path = 'DataSets/stock_price_data.csv'
@@ -122,17 +122,17 @@ if os.path.exists(model_path) and os.path.exists(tokenizer_path):
     # 2025-09-05  23652.439453  23860.25  23475.330078  23841.980469  8413730000
     
     predict_data = {
-        'model_input' : predict_title,
-        'Low' : [[23475.330078]],
-        'High' : [[23860.25]],
-        'Open' : [[23841.980469]],
-        'Close' : [[23652.439453]],
-        'Volume' : [[8413730000]],
+        'model_input': np.array(predict_title),  # (1, 110)
+        'Low': np.array([[23475.330078]], dtype=np.float32),
+        'High': np.array([[23860.25]], dtype=np.float32),
+        'Open': np.array([[23841.980469]], dtype=np.float32),
+        'Close': np.array([[23652.439453]], dtype=np.float32),
+        'Volume': np.array([[8413730000]], dtype=np.float32),
     }
-    'SaveModel/upstock_model.keras'
-    # predict activity part
+
     prediction = model.predict(predict_data)
     print(prediction)
+
     
 else:
     print('Modeling file is not exists')
