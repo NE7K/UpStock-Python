@@ -9,16 +9,16 @@ import os
 from sklearn.model_selection import train_test_split
 
 # pc import
-# from tensorflow.keras.preprocessing.text import Tokenizer
-# from tensorflow.keras.callbacks import EarlyStopping
-# from tensorflow.keras.preprocessing.sequence import pad_sequences
-# from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.callbacks import TensorBoard
 
 # mac import
-from keras.preprocessing.text import Tokenizer
-from keras.callbacks import EarlyStopping
-from keras.preprocessing.sequence import pad_sequences
-from keras.callbacks import TensorBoard
+# from keras.preprocessing.text import Tokenizer
+# from keras.callbacks import EarlyStopping
+# from keras.preprocessing.sequence import pad_sequences
+# from keras.callbacks import TensorBoard
 
 # TODO if file 처리
 price_path = 'DataSets/stock_price_data.csv'
@@ -164,6 +164,7 @@ merged = pd.merge(news_data, price_data[['date', 'Close', 'High', 'Low', 'Open',
 titles = merged['title'].tolist()
 # 2. 타이틀 fit on text
 tokenizer.fit_on_texts(titles)
+# TODO TOKENIZER 개수
 print(len(tokenizer.index_word))
 # 3. 타이틀 text to sequences
 titles = tokenizer.texts_to_sequences(titles)
@@ -172,9 +173,10 @@ titles = pad_sequences(titles, maxlen=110)
 chart = merged[['Low', 'High', 'Open', 'Close', 'Volume']]
 labels = np.array(merged['label'])
 
-print(merged)
+# TODO 이거 필요없으면 지우던가 EXCEPT 처리
+# print(merged)
+# exit()
 
-exit()
 # text, chart, label 데이터 쪼개기 0.2
 X_train_text, X_val_text, X_train_chart, X_val_chart, y_train, y_val = train_test_split(
     titles, chart, labels, test_size=0.2, random_state=42
@@ -252,7 +254,7 @@ early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=
 model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=32, epochs=50, callbacks=[early_stop, tensorboard])
 model.summary()
 model.save(model_path)
-model.save(model_path)
+model.save(model_path_h5)
 
 try:
     with open(tokenizer_path, 'wb') as f:
