@@ -5,16 +5,17 @@ import numpy as np
 import time
 import os
 
-# validation x > test data
+# validation x > split Test Data
 from sklearn.model_selection import train_test_split
 
-# pc import
+# recent keras import
+from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.callbacks import TensorBoard
 
-# mac import
+# compatibility issue import
 # from keras.preprocessing.text import Tokenizer
 # from keras.callbacks import EarlyStopping
 # from keras.preprocessing.sequence import pad_sequences
@@ -25,10 +26,8 @@ price_path = 'DataSets/stock_price_data.csv'
 news_path = 'DataSets/analyst_ratings_processed.csv'
 tokenizer_path = 'SaveModel/upstock_tokenizer.pickle'
 model_path = 'SaveModel/upstock_model.keras'
+# compatibility issue .h5
 model_path_h5 = 'SaveModel/upstock_model.h5'
-
-# predict
-from keras.models import load_model
 
 # 완전 초기 모델에 사용한 데이터셋
 # news_data = pd.read_csv('DataSets/UpStock-NewsData.csv')
@@ -39,16 +38,51 @@ from keras.models import load_model
 # print(news_data2)
 # print(news_data)
 
-try:
-    price_data = pd.read_csv(price_path)
-except Exception as e:
-    print(f'주식 가격 csv 파일 불러오기 실패 {e}')
+# load file < predict task에는 필요없음
+def load_file(path, description):
+    if os.path.exists(path):
+        try:
+            print(f'{description} loaded sucessful')
+            return pd.read_csv(path)
+        except Exception as e:
+            print(f'{description} exists but, load fail {e}')
+            return None
+    else:
+        print(f'{description} not exists')
+        return None
 
-try:
-    news_data = pd.read_csv(news_path)
-except Exception as e:
-    print(f'뉴스 기사 불러오기 실패 {e}')
+price_data = load_file(price_path, 'stock price csv file')
+news_data = load_file(news_path, 'stock news csv file')
 
+# load tokenizer
+if os.path.exists(tokenizer_path):
+    try:
+        with open(tokenizer_path, 'rb') as f:
+            tokenizer = pickle.load(f)
+        print('load tokenizer complete')
+    except Exception as e:
+        print('load tokenizer fail')
+else:
+    print('tokenizer not exists')
+
+# load save model / https://www.tensorflow.org/guide/keras/save_and_serialize?hl=ko#savedmodel_%ED%98%95%EC%8B%9D
+# model load 지침
+def check_all_model(path, description):
+    if os.path.exists(path):
+        try:
+            model = load_model(path)
+            print(f'{description} load model complete')
+            return model
+        except Exception as e:
+            print(f'{description} load model fail : {e}')
+            return None
+    else:
+        print(f'{description} not exists')
+        return None
+    
+model = check_all_model(model_path, 'model .keras')
+model_h5 = check_all_model(model_path_h5, 'model .h5')
+        
 # print(news_data.isnull().sum())
 # Unnamed: 0    1289
 # title            0
@@ -87,28 +121,10 @@ except Exception as e:
 # save model exists => predict
 # save model not exists => DeepLearning
 if os.path.exists(model_path) and os.path.exists(tokenizer_path):
-    print('Founded Save Model and Tokenizer')
-    # TODO here predict
-    
-    # load tokenizer
-    try:
-        with open(tokenizer_path, 'rb') as f:
-            tokenizer = pickle.load(f)
-        print('load tokenizer complete')
-    except Exception as e:
-        print('load tokenizer fail')
-    
-    # load save model / https://www.tensorflow.org/guide/keras/save_and_serialize?hl=ko#savedmodel_%ED%98%95%EC%8B%9D
-    # model load 지침
-    try:
-        model = load_model(model_path)
-        print('load model complete')
-    except Exception as e:
-        print(f'load model fail : {e}')
         
     # TODO tensorflow keras, keras 호환성 차이 극복용
     model = load_model("SaveModel/upstock_model.keras")
-    model.save("SaveModel/upstock_model.h5")
+    # model.save("SaveModel/upstock_model.h5")
         
     # Added new text preprocessing
     # 2025-09-07 korean time 00:26 / https://finance.yahoo.com/news/bad-economic-news-might-actually-be-bad-again-100058088.html
@@ -133,9 +149,8 @@ if os.path.exists(model_path) and os.path.exists(tokenizer_path):
     prediction = model.predict(predict_data)
     print(prediction)
 
-    
 else:
-    print('Modeling file is not exists')
+    print('Model file is not exists, Start DeepLearning')
     
     # Part Preprocessing
     news_data = news_data.dropna(subset=['date'])
