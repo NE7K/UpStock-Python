@@ -42,7 +42,7 @@ model_path_h5 = 'SaveModel/upstock_model.h5'
 def load_file(path, description):
     if os.path.exists(path):
         try:
-            print(f'{description} loaded sucessful')
+            print(f'{description} load complete')
             return pd.read_csv(path)
         except Exception as e:
             print(f'{description} exists but, load fail {e}')
@@ -50,38 +50,47 @@ def load_file(path, description):
     else:
         print(f'{description} not exists')
         return None
-
-price_data = load_file(price_path, 'stock price csv file')
-news_data = load_file(news_path, 'stock news csv file')
-
-# load tokenizer
-if os.path.exists(tokenizer_path):
-    try:
-        with open(tokenizer_path, 'rb') as f:
-            tokenizer = pickle.load(f)
-        print('load tokenizer complete')
-    except Exception as e:
-        print('load tokenizer fail')
-else:
-    print('tokenizer not exists')
-
-# load save model / https://www.tensorflow.org/guide/keras/save_and_serialize?hl=ko#savedmodel_%ED%98%95%EC%8B%9D
+    
+# load save model : https://www.tensorflow.org/guide/keras/save_and_serialize?hl=ko#savedmodel_%ED%98%95%EC%8B%9D
 # model load 지침
 def check_all_model(path, description):
     if os.path.exists(path):
         try:
             model = load_model(path)
-            print(f'{description} load model complete')
+            print(f'{description} load complete')
             return model
         except Exception as e:
-            print(f'{description} load model fail : {e}')
+            print(f'{description} load fail : {e}')
             return None
     else:
         print(f'{description} not exists')
         return None
-    
+
+# load tokenizer
+def load_pickle(path, description):
+    if os.path.exists(path):
+        try:
+            with open(path, 'rb') as f:
+                tokenizer = pickle.load(f)
+                print(f'{description} load complete')
+                return tokenizer
+        except Exception as e:
+            print(f'{description} load fail : {e}')
+            return None
+    else:
+        print(f'{description} not exists')
+        return None
+        
+price_data = load_file(price_path, 'stock price csv file')
+news_data = load_file(news_path, 'stock news csv file')
+
 model = check_all_model(model_path, 'model .keras')
 model_h5 = check_all_model(model_path_h5, 'model .h5')
+
+tokenizer = load_pickle(tokenizer_path, 'tokenizer')
+
+# TEST
+model.summary()
         
 # print(news_data.isnull().sum())
 # Unnamed: 0    1289
