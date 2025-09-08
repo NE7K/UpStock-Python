@@ -1,3 +1,9 @@
+# INFO compatibility issue import
+# from keras.preprocessing.text import Tokenizer
+# from keras.callbacks import EarlyStopping
+# from keras.preprocessing.sequence import pad_sequences
+# from keras.callbacks import TensorBoard
+
 import tensorflow as tf
 import pandas as pd
 import pickle
@@ -15,13 +21,6 @@ from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.callbacks import TensorBoard
 
-# compatibility issue import
-# from keras.preprocessing.text import Tokenizer
-# from keras.callbacks import EarlyStopping
-# from keras.preprocessing.sequence import pad_sequences
-# from keras.callbacks import TensorBoard
-
-# TODO if file 처리
 price_path = 'DataSets/stock_price_data.csv'
 news_path = 'DataSets/analyst_ratings_processed.csv'
 tokenizer_path = 'SaveModel/upstock_tokenizer.pickle'
@@ -29,11 +28,12 @@ model_path = 'SaveModel/upstock_model.keras'
 # compatibility issue .h5
 model_path_h5 = 'SaveModel/upstock_model.h5'
 
-# 완전 초기 모델에 사용한 데이터셋
+# 초기 모델에 사용한 데이터셋
 # news_data = pd.read_csv('DataSets/UpStock-NewsData.csv')
 # news_data = pd.read_csv('DataSets/raw_partner_headlines.csv')
 # news_data2 = pd.read_csv('DataSets/raw_analyst_ratings.csv')
 
+# 초기 모델 데이터셋 출력
 # print(news_data)
 # print(news_data2)
 # print(news_data)
@@ -91,7 +91,8 @@ tokenizer = load_pickle(tokenizer_path, 'tokenizer')
 
 # TEST
 model.summary()
-        
+
+# 데이터셋 null 개수 출력
 # print(news_data.isnull().sum())
 # Unnamed: 0    1289
 # title            0
@@ -102,8 +103,9 @@ model.summary()
 # 길이 열 추가해서 카운트해서 lenght column에 집어넣고
 # news_data['lenght'] = news_data['title'].str.len()
 # print(news_data['title'].str.len().max())
-# print(news_data['title'].str.len().describe())
 
+# 데이터셋 길이 통계 요약 출력
+# print(news_data['title'].str.len().describe())
 # count    1.399180e+06
 # mean     6.991809e+01
 # std      3.899507e+01
@@ -114,9 +116,10 @@ model.summary()
 # max      5.000000e+02
 # Name: title, dtype: float64
 
+# 초기 모델 정규화 테스트 부분
 # model = tf.keras.models.Sequential([
 #     # out_dim 단어를 몇 차원으로 표기할건지 중간 : 128
-#     tf.keras.layers.Embedding(len(tokenizer.index_word) + 1, 64),
+#     tf.keras.layers.Embeㄴdding(len(tokenizer.index_word) + 1, 64),
 #     # return sequence 다음 레이어에서 모든 sequence 사용 가능하게
 #     tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True)),
 #     # 앞선 레이어에서 중요한 단어 (최대값 이용)
@@ -273,6 +276,7 @@ else:
     }
 
     # Part callback | tensorboard --logdir=LogFile/
+    # time.time() 큰 숫자가 최신
     tensorboard = tf.keras.callbacks.TensorBoard(log_dir='LogFile/Log{}'.format('_Model_' + str(int(time.time()))) )
     early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1)
 
