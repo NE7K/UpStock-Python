@@ -277,6 +277,7 @@ else:
 
     # Part callback | tensorboard --logdir=LogFile/
     # time.time() 큰 숫자가 최신
+    #TODO 나중에 모델 딥러닝할 때 적용시킬 것 : datetime.datetime.now().strftime("%Y-%m-%d_%H-%M") 
     tensorboard = tf.keras.callbacks.TensorBoard(log_dir='LogFile/Log{}'.format('_Model_' + str(int(time.time()))) )
     early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1)
 
@@ -284,6 +285,7 @@ else:
     model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=32, epochs=50, callbacks=[early_stop, tensorboard])
     model.summary()
     model.save(model_path)
+    # 비상용
     model.save(model_path_h5)
 
     try:

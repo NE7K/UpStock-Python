@@ -186,3 +186,6 @@ SaveModel/*
 
 # Logs
 LogFile/*
+
+# 과거 사용 파일 백업용
+last python file
