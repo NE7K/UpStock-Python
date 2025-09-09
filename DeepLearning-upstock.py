@@ -7,8 +7,8 @@
 import numpy as np
 import pandas as pd
 import pickle
-import time
 import os
+import time
 # 로그파일 재정립
 import datetime
 
@@ -139,9 +139,7 @@ if os.path.exists(model_path) and os.path.exists(tokenizer_path):
     model = load_model("SaveModel/upstock_model.keras")
     # model.save("SaveModel/upstock_model.h5")
         
-        
     # TODO 전처리 필요, 2025 절대가격 그대로 들어가지 않도록 
-    
     
     # PART Negative : Added new text preprocessing
     # 2025-09-07 korean time 00:26 / https://finance.yahoo.com/news/bad-economic-news-might-actually-be-bad-again-100058088.html

@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  upstock:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Apple Silicon에서 빌드 오류 시 다음 줄을 사용하세요:
+    # platform: linux/arm64
+    # x86 서버에서 강제 필요 시:
+    # platform: linux/amd64
+    volumes:
+      - ./DataSets:/app/DataSets
+      - ./SaveModel:/app/SaveModel
+      - ./LogFile:/app/LogFile
+      - ./:/app
+    working_dir: /app
+    # 텐서보드 확인용 (선택)
+    ports:
+      - "6006:6006"
+    environment:
+      - TF_CPP_MIN_LOG_LEVEL=2
+      - PYTHONUNBUFFERED=1
+    command: ["python", "your_script.py"]
+    # ↑ 실제 실행 파일명으로 바꾸세요 (예: train.py / predict.py / 위에 붙여주신 파일명)
