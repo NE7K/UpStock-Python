@@ -7,6 +7,6 @@ import numpy as np
 import re
 
 # Get Yahoo Finance Data
-StockData = yf.download('^NDX', start='2025-09-08', end='2025-09-09')
+StockData = yf.download('^NDX', start='2025-09-05', end='2025-09-09')
 
 print(StockData)

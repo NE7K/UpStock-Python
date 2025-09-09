@@ -8,9 +8,11 @@ import numpy as np
 import pandas as pd
 import pickle
 import os
-import time
 # 로그파일 재정립
 import datetime
+import yfinance as yf
+# not using
+import time
 
 # validation x > split Test Data
 from sklearn.model_selection import train_test_split
@@ -22,7 +24,7 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.callbacks import TensorBoard, EarlyStopping
 
-price_path = 'DataSets/stock_price_data.csv'
+price_path = 'DataSets/stock_price_data_v2.csv'
 news_path = 'DataSets/analyst_ratings_processed.csv'
 tokenizer_path = 'SaveModel/upstock_tokenizer.pickle'
 model_path = 'SaveModel/upstock_model.keras'
@@ -138,8 +140,6 @@ if os.path.exists(model_path) and os.path.exists(tokenizer_path):
     # TODO tensorflow keras, keras 호환성 차이 극복용
     model = load_model("SaveModel/upstock_model.keras")
     # model.save("SaveModel/upstock_model.h5")
-        
-    # TODO 전처리 필요, 2025 절대가격 그대로 들어가지 않도록 
     
     # PART Negative : Added new text preprocessing
     # 2025-09-07 korean time 00:26 / https://finance.yahoo.com/news/bad-economic-news-might-actually-be-bad-again-100058088.html
@@ -153,36 +153,135 @@ if os.path.exists(model_path) and os.path.exists(tokenizer_path):
     predict_title = tokenizer.texts_to_sequences(predict_title)
     predict_title = pad_sequences(predict_title, maxlen=110)
     
-    # PART Negative : Added new stock price data
-    # Price              Close      High           Low          Open      Volume                                             
-    # 2025-09-05  23652.439453  23860.25  23475.330078  23841.980469  8413730000
+    # pyf_date = '2025-09-07'
+    
+    # # PART test stock dataset yf
+    # pyf = yf.download('^NDX', start='2025-09-05', end='2025-09-09')
+    # pyf.reset_index(inplace=True)
+    
+    # pyf['prev_Close'] = pyf['Close'].shift(1)
+    # pyf['Close_logret'] = np.log(pyf['Close'] / pyf['prev_Close'])
+    # pyf['Low_logret']   = np.log(pyf['Low']  / pyf['Close'])
+    # pyf['High_logret']  = np.log(pyf['High'] / pyf['Close'])
+    # pyf['Open_logret']  = np.log(pyf['Open'] / pyf['Close'])
+    # pyf['Volume_log']   = np.log1p(pyf['Volume'])
+    
+    # row = pyf.loc[pyf['Date'] == pd.to_datetime()].iloc[0]
+
     # predict_data = {
-    #     'model_input': np.array(predict_title),  # (1, 110)
-    #     'Low': np.array([[23475.330078]], dtype=np.float32),
-    #     'High': np.array([[23860.25]], dtype=np.float32),
-    #     'Open': np.array([[23841.980469]], dtype=np.float32),
-    #     'Close': np.array([[23652.439453]], dtype=np.float32),
-    #     'Volume': np.array([[8413730000]], dtype=np.float32),
+    # 'model_input': np.array(predict_title),
+    # 'Low'   : np.array([[row['Low_logret']]],   dtype=np.float32),
+    # 'High'  : np.array([[row['High_logret']]],  dtype=np.float32),
+    # 'Open'  : np.array([[row['Open_logret']]],  dtype=np.float32),
+    # 'Close' : np.array([[row['Close_logret']]], dtype=np.float32),
+    # 'Volume': np.array([[row['Volume_log']]],   dtype=np.float32),
     # }
     
-    # PART Positive : Added new stock price data 
-    # date,Close,High,Low,Open,Volume,label
-    # 2020-05-27,9442.0498046875,9445.0595703125,9182.4501953125,9366.6298828125,4489110000,1
-
-    try:
-        predict_data = {
-            'model_input': np.array(predict_title),
-            'Low': np.array([[9182.4501953125]], dtype=np.float32),
-            'High': np.array([[9445.0595703125]], dtype=np.float32),
-            'Open': np.array([[9366.6298828125]], dtype=np.float32),
-            'Close': np.array([[9442.0498046875]], dtype=np.float32),
-            'Volume': np.array([[4489110000]], dtype=np.float32),
-        }
-    except Exception as e:
-        print(f'here {e}')
+    # prediction = model.predict(predict_data)
+    # print(prediction, 'up' if prediction >=0.5 else 'down')
     
+    pyf_date = '2025-09-07'  # 문자열 그대로 두고 필요시 바꿔 쓰기
+    target_dt = pd.to_datetime(pyf_date)
+
+        # --- PATCH START: yfinance 다운로드 ~ 예측 입력 ---
+    # 1) 버퍼 넉넉하게 (전일 종가 확보), end는 exclusive
+    yf_start = (target_dt - pd.Timedelta(days=7)).strftime('%Y-%m-%d')
+    yf_end   = (target_dt + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+
+    # 2) auto_adjust=False로 일관성 유지 + 경고 해소
+    pyf = yf.download('^NDX', start=yf_start, end=yf_end, auto_adjust=False, progress=False)
+    pyf.reset_index(inplace=True)
+
+    # 3) 다중컬럼 가드
+    if isinstance(pyf.columns, pd.MultiIndex):
+        pyf.columns = pyf.columns.droplevel(1)
+
+    # 4) 파생 피처 계산
+    pyf['prev_Close']   = pyf['Close'].shift(1)
+    pyf['Close_logret'] = np.log(pyf['Close'] / pyf['prev_Close'])
+    pyf['Low_logret']   = np.log(pyf['Low']   / pyf['Close'])
+    pyf['High_logret']  = np.log(pyf['High']  / pyf['Close'])
+    pyf['Open_logret']  = np.log(pyf['Open']  / pyf['Close'])
+    pyf['Volume_log']   = np.log1p(pyf['Volume'])
+
+    # 5) prev_Close가 NaN인 첫 행 제거 (핵심)
+    pyf = pyf.dropna(subset=['prev_Close']).reset_index(drop=True)
+
+    # 6) 타깃 날짜 = 정확히 일치 없으면 직전 거래일
+    mask_eq = pyf['Date'] == target_dt
+    if mask_eq.any():
+        row = pyf.loc[mask_eq].iloc[0]
+    else:
+        prior = pyf.loc[pyf['Date'] <= target_dt]
+        if len(prior) == 0:
+            raise ValueError(f"{pyf_date} 기준 직전 거래일 데이터가 없습니다. 시작일을 더 과거로 늘려보세요.")
+        row = prior.iloc[-1]
+
+    # 7) 안전 체크
+    req = ['Low_logret','High_logret','Open_logret','Close_logret','Volume_log']
+    if pd.isna(row[req]).any():
+        raise ValueError(f"필수 피처 NaN 존재(드묾): {row[req].to_dict()}")
+
+    # 8) 예측 입력(dict)
+    predict_data = {
+        'model_input': np.array(predict_title),
+        'Low'   : np.array([[row['Low_logret']]],   dtype=np.float32),
+        'High'  : np.array([[row['High_logret']]],  dtype=np.float32),
+        'Open'  : np.array([[row['Open_logret']]],  dtype=np.float32),
+        'Close' : np.array([[row['Close_logret']]], dtype=np.float32),
+        'Volume': np.array([[row['Volume_log']]],   dtype=np.float32),
+    }
+
     prediction = model.predict(predict_data)
-    print(prediction, 'up' if prediction >=0.5 else 'down')
+    print(f"pred_date(requested)={pyf_date}, used_date={row['Date'].date()}",
+          prediction, 'up' if prediction >= 0.5 else 'down')
+    
+    # --- PATCH END ---
+
+    # # yfinance end는 'exclusive'라서 +1일 해줘야 target_dt 포함됨
+    # yf_start = (target_dt - pd.Timedelta(days=2)).strftime('%Y-%m-%d')  # prev_Close 계산 위해 하루 전보다 넉넉히 2일
+    # yf_end   = (target_dt + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+
+    # # 데이터 다운로드
+    # pyf = yf.download('^NDX', start=yf_start, end=yf_end)
+    # pyf.reset_index(inplace=True)
+    # # 다중컬럼 대비(보통 ^NDX는 단일이지만 안전장치)
+    # if isinstance(pyf.columns, pd.MultiIndex):
+    #     pyf.columns = pyf.columns.droplevel(1)
+
+    # # 로그 파생치 계산
+    # pyf['prev_Close']   = pyf['Close'].shift(1)
+    # pyf['Close_logret'] = np.log(pyf['Close'] / pyf['prev_Close'])
+    # pyf['Low_logret']   = np.log(pyf['Low']   / pyf['Close'])
+    # pyf['High_logret']  = np.log(pyf['High']  / pyf['Close'])
+    # pyf['Open_logret']  = np.log(pyf['Open']  / pyf['Close'])
+    # pyf['Volume_log']   = np.log1p(pyf['Volume'])
+
+    # # target_dt에 정확히 일치하는 날짜가 없으면(주말/휴장) 직전 거래일로 fallback
+    # mask_eq = pyf['Date'] == target_dt
+    # if mask_eq.any():
+    #     row = pyf.loc[mask_eq].iloc[0]
+    # else:
+    #     # 직전 거래일 찾기
+    #     row = pyf.loc[pyf['Date'] <= target_dt].iloc[-1]
+
+    # # 필수 피처 NaN 방어(특히 prev_Close 없는 첫행)
+    # req = ['Low_logret','High_logret','Open_logret','Close_logret','Volume_log']
+    # if pd.isna(row[req]).any():
+    #     raise ValueError(f"필수 피처 NaN 존재: {row[req].to_dict()} (prev_Close가 없는 첫 행일 수 있음)")
+
+    # # 예측 입력(dict)
+    # predict_data = {
+    #     'model_input': np.array(predict_title),
+    #     'Low'   : np.array([[row['Low_logret']]],   dtype=np.float32),
+    #     'High'  : np.array([[row['High_logret']]],  dtype=np.float32),
+    #     'Open'  : np.array([[row['Open_logret']]],  dtype=np.float32),
+    #     'Close' : np.array([[row['Close_logret']]], dtype=np.float32),
+    #     'Volume': np.array([[row['Volume_log']]],   dtype=np.float32),
+    # }
+
+    # prediction = model.predict(predict_data)
+    # print(f"pred_date(requested)={pyf_date}, used_date={row['Date'].date()}", prediction, 'up' if prediction >= 0.5 else 'down')
     
     # predict task
     # TEST 학습 데이터 분포 확인용
@@ -211,44 +310,88 @@ else:
 
     # price data의 date 가져와서 merge
     price_data['date'] = pd.to_datetime(price_data['date']).dt.date
-    merged = pd.merge(news_data, price_data[['date', 'Close', 'High', 'Low', 'Open', 'Volume', 'label']], on='date', how='inner')
+    merged = pd.merge(news_data, price_data[['date', 'Close_logret', 'High_logret', 'Low_logret', 'Open_logret', 'Volume_log', 'label_next_up']], on='date', how='inner')
 
     # merged.to_csv('DataSets/Preprocessing.csv', index=False)
 
-    # 글자 치환
-    # 1. 타이틀을 리스트로
-    titles = merged['title'].tolist()
-    # 2. 타이틀 fit on text
-    tokenizer.fit_on_texts(titles)
-    # TODO TOKENIZER 개수
+    # --- 시간순 분할 + 토크나이저는 train만 ---
+    merged['date'] = pd.to_datetime(merged['date'])
+    merged = merged.sort_values('date').reset_index(drop=True)
+
+    split_idx = int(len(merged) * 0.8)
+    train_df = merged.iloc[:split_idx]
+    val_df   = merged.iloc[split_idx:]
+
+    # 토크나이저는 train만으로 fit
+    tokenizer = Tokenizer(char_level=False, oov_token='<OOV>')
+    tokenizer.fit_on_texts(train_df['title'].tolist())
     print(len(tokenizer.index_word))
-    # 3. 타이틀 text to sequences
-    titles = tokenizer.texts_to_sequences(titles)
-    # 4. pad sequences
-    titles = pad_sequences(titles, maxlen=110)
-    chart = merged[['Low', 'High', 'Open', 'Close', 'Volume']]
-    labels = np.array(merged['label'])
 
-    # TODO 이거 필요없으면 지우던가 EXCEPT 처리
-    # print(merged)
-    # exit()
-
-    # text, chart, label 데이터 쪼개기 0.2
-    X_train_text, X_val_text, X_train_chart, X_val_chart, y_train, y_val = train_test_split(
-        titles, chart, labels, test_size=0.2, random_state=42
+    # 텍스트 시퀀스 변환
+    X_train_text = pad_sequences(
+        tokenizer.texts_to_sequences(train_df['title'].tolist()), maxlen=110
+    )
+    X_val_text = pad_sequences(
+        tokenizer.texts_to_sequences(val_df['title'].tolist()), maxlen=110
     )
 
+    # 표 피처/라벨
+    X_train_chart = train_df[['Low_logret','High_logret','Open_logret','Close_logret','Volume_log']]
+    X_val_chart   = val_df[['Low_logret','High_logret','Open_logret','Close_logret','Volume_log']]
+
+    y_train = train_df['label_next_up'].to_numpy()
+    y_val   = val_df['label_next_up'].to_numpy()
+
+    # -----------------
+    # # 글자 치환
+    # # 1. 타이틀을 리스트로
+    # titles = merged['title'].tolist()
+    # # 2. 타이틀 fit on text
+    # tokenizer.fit_on_texts(titles)
+    # # TODO TOKENIZER 개수
+    # print(len(tokenizer.index_word))
+    # # 3. 타이틀 text to sequences
+    # titles = tokenizer.texts_to_sequences(titles)
+    # # 4. pad sequences
+    # titles = pad_sequences(titles, maxlen=110)
+    # chart = merged[['Low_logret', 'High_logret', 'Open_logret', 'Close_logret', 'Volume_log']]
+    # labels = np.array(merged['label_next_up'])
+
+    # # TODO 이거 필요없으면 지우던가 EXCEPT 처리
+    # # print(merged)
+    # # exit()
+
+    # # text, chart, label 데이터 쪼개기 0.2
+    # X_train_text, X_val_text, X_train_chart, X_val_chart, y_train, y_val = train_test_split(
+    #     titles, chart, labels, test_size=0.2, random_state=42
+    # )
+    # ---------------------
+
     # nomalization, 전체 데이터에서 하나의 평균과 분산을 사용
+    # low_preprocessing = tf.keras.layers.Normalization(axis=None)
+    # low_preprocessing.adapt(np.array(merged['Low_logret']))
+    # high_preprocessing = tf.keras.layers.Normalization(axis=None)
+    # high_preprocessing.adapt(np.array(merged['High_logret']))
+    # open_preprocessing = tf.keras.layers.Normalization(axis=None)
+    # open_preprocessing.adapt(np.array(merged['Open_logret']))
+    # close_preprocessing = tf.keras.layers.Normalization(axis=None)
+    # close_preprocessing.adapt(np.array(merged['Close_logret']))
+    # volume_preprocessing = tf.keras.layers.Normalization(axis=None)
+    # volume_preprocessing.adapt(np.array(merged['Volume_log']))
+    
+    # 7) Normalization (train만 adapt)
     low_preprocessing = tf.keras.layers.Normalization(axis=None)
-    low_preprocessing.adapt(np.array(merged['Low']))
     high_preprocessing = tf.keras.layers.Normalization(axis=None)
-    high_preprocessing.adapt(np.array(merged['High']))
     open_preprocessing = tf.keras.layers.Normalization(axis=None)
-    open_preprocessing.adapt(np.array(merged['Open']))
     close_preprocessing = tf.keras.layers.Normalization(axis=None)
-    close_preprocessing.adapt(np.array(merged['Close']))
     volume_preprocessing = tf.keras.layers.Normalization(axis=None)
-    volume_preprocessing.adapt(np.array(merged['Volume']))
+
+    low_preprocessing.adapt(X_train_chart['Low_logret'].to_numpy())
+    high_preprocessing.adapt(X_train_chart['High_logret'].to_numpy())
+    open_preprocessing.adapt(X_train_chart['Open_logret'].to_numpy())
+    close_preprocessing.adapt(X_train_chart['Close_logret'].to_numpy())
+    volume_preprocessing.adapt(X_train_chart['Volume_log'].to_numpy())
+
 
     # nomalization result print
     # normalized_close = close_preprocessing(np.array(merged['Close']))
@@ -286,34 +429,34 @@ else:
 
     train_inputs = {
         'model_input' : X_train_text,
-        'Low' : np.array(X_train_chart['Low']).reshape(-1, 1),
-        'High' : np.array(X_train_chart['High']).reshape(-1, 1),
-        'Open' : np.array(X_train_chart['Open']).reshape(-1, 1),
-        'Close' : np.array(X_train_chart['Close']).reshape(-1, 1),
-        'Volume' : np.array(X_train_chart['Volume']).reshape(-1, 1),
+        'Low' : np.array(X_train_chart['Low_logret']).reshape(-1, 1),
+        'High' : np.array(X_train_chart['High_logret']).reshape(-1, 1),
+        'Open' : np.array(X_train_chart['Open_logret']).reshape(-1, 1),
+        'Close' : np.array(X_train_chart['Close_logret']).reshape(-1, 1),
+        'Volume' : np.array(X_train_chart['Volume_log']).reshape(-1, 1),
     }
 
     val_inputs = {
         'model_input': X_val_text,
-        'Low': np.array(X_val_chart['Low']).reshape(-1, 1),
-        'High': np.array(X_val_chart['High']).reshape(-1, 1),
-        'Open': np.array(X_val_chart['Open']).reshape(-1, 1),
-        'Close': np.array(X_val_chart['Close']).reshape(-1, 1),
-        'Volume': np.array(X_val_chart['Volume']).reshape(-1, 1),
+        'Low': np.array(X_val_chart['Low_logret']).reshape(-1, 1),
+        'High': np.array(X_val_chart['High_logret']).reshape(-1, 1),
+        'Open': np.array(X_val_chart['Open_logret']).reshape(-1, 1),
+        'Close': np.array(X_val_chart['Close_logret']).reshape(-1, 1),
+        'Volume': np.array(X_val_chart['Volume_log']).reshape(-1, 1),
     }
 
     # Part callback | tensorboard --logdir=LogFile/
     # time.time() 큰 숫자가 최신
     #TODO 나중에 모델 딥러닝할 때 적용시킬 것 : datetime.datetime.now().strftime("%Y-%m-%d_%H-%M") 
-    # tensorboard = TensorBoard(log_dir='LogFile/Log{}'.format('_Model_' + str(int(time.time()))) )
-    tensorboard = TensorBoard(log_dir='LogFile/Log{}'.format('_Model_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")) )
+    tensorboard = TensorBoard(log_dir='LogFile/Log{}'.format('_Model_' + str(int(time.time()))) )
+    # tensorboard = TensorBoard(log_dir='LogFile/Log{}'.format('_Model_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")) )
     early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1)
 
-    # train
-    model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=32, epochs=50, callbacks=[early_stop, tensorboard])
+    # train# 1) 디렉토리 강제 삭제
+    model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=1024, epochs=10, callbacks=[early_stop, tensorboard])
     model.summary()
     model.save(model_path)
-    # 비상용
+    # 구버전용
     model.save(model_path_h5)
 
     try:
