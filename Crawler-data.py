@@ -1,22 +1,48 @@
 import pandas as pd
-from langchain_community.document_loaders import WebBaseLoader
 import yfinance as yf
 import numpy as np
 
-# note regex import
-import re
+# langchain import
+from langchain_community.document_loaders import WebBaseLoader
 
 # Get Yahoo Finance Data
 StockData = yf.download('^NDX', start='2009-02-14', end='2020-06-12')
+
+# create independence dataset 
+StockData = StockData.copy()
 # 인덱스 초기화
 StockData.reset_index(inplace=True)
-# 멀티 플렉스 > 단일
+
+# Date -> date
+StockData.rename(columns={'Date' : 'date'}, inplace=True)
+
+# 멀티 플렉스 > 단일, 다른 개별 주식 이용하면 확장필요
 StockData.columns = StockData.columns.droplevel(1)
+
 # open 가격 때보다 close 가격이 높으면 1 else 0
 StockData['label'] = np.where( StockData['Open'] < StockData['Close'], 1, 0)
-StockData.rename(columns={'Date' : 'date'}, inplace=True)
-StockData.to_csv('DataSets/stock_price_data.csv', index=False)
 
+# PART 로그 수익률, 로그 비율, 로그 거래량 칼럼 추가
+# prev close 전날 종가
+StockData['prev_Close'] = StockData['Close'].shift(1)
+# 전일 대비 증가 로그수익률
+StockData['Close_logret'] = np.log(StockData['Close'] / StockData['prev_Close'])
+# 저가/종가 로그비율
+StockData['Low_logret'] = np.log(StockData['Low'] / StockData['Close'])
+# 고가/종가 로그비율
+StockData['High_logret'] = np.log(StockData['High'] / StockData['Close'])
+# 시가/종가 로그비율
+StockData['Open_logret'] = np.log(StockData['Open'] / StockData['Close'])
+# 로그 1+거래량
+StockData['Volume_log'] = np.log1p(StockData['Volume'])
+
+# 첫 raw의 prev_Close 제거
+StockData = StockData.dropna(subset=['prev_Close']).reset_index(drop=True)
+
+# save dataset
+StockData.to_csv('DataSets/stock_price_data_v2.csv', index=False)
+
+# TODO 현재 진행하지 않는 부분
 # RSI, MACD
 # StockData['Rsi'] = 
 

@@ -191,4 +191,4 @@ LogFile/*
 last python file
 
 # test python file
-test-deeplearning.py
+test.py
