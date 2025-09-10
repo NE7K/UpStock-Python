@@ -190,9 +190,5 @@ LogFile/*
 # 과거 사용 파일 백업용
 last python file
 
-# test python file
-test.py
-test2.py
-
 # docker
 Docker/
