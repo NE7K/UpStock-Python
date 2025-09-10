@@ -8,9 +8,10 @@ import numpy as np
 import pandas as pd
 import pickle
 import os
-import time
-# 로그파일 재정립
 import datetime
+
+# 과거 log file 생성 규칙에 사용한 import
+# import time
 
 # validation x > split Test Data
 from sklearn.model_selection import train_test_split
@@ -82,9 +83,11 @@ def load_pickle(path, description):
         print(f'{description} not exists')
         return None
 
+# dataset
 price_data = load_file(price_path, 'stock price csv file')
 news_data = load_file(news_path, 'stock news csv file')
 
+# model
 model = check_all_model(model_path, 'model .keras')
 model_h5 = check_all_model(model_path_h5, 'model .h5')
 
@@ -158,30 +161,30 @@ if os.path.exists(model_path) and os.path.exists(tokenizer_path):
     # PART Negative : Added new stock price data
     # Price              Close      High           Low          Open      Volume                                             
     # 2025-09-05  23652.439453  23860.25  23475.330078  23841.980469  8413730000
-    # predict_data = {
-    #     'model_input': np.array(predict_title),  # (1, 110)
-    #     'Low': np.array([[23475.330078]], dtype=np.float32),
-    #     'High': np.array([[23860.25]], dtype=np.float32),
-    #     'Open': np.array([[23841.980469]], dtype=np.float32),
-    #     'Close': np.array([[23652.439453]], dtype=np.float32),
-    #     'Volume': np.array([[8413730000]], dtype=np.float32),
-    # }
+    predict_data = {
+        'model_input': np.array(predict_title),  # (1, 110)
+        'Low': np.array([[23475.330078]], dtype=np.float32),
+        'High': np.array([[23860.25]], dtype=np.float32),
+        'Open': np.array([[23841.980469]], dtype=np.float32),
+        'Close': np.array([[23652.439453]], dtype=np.float32),
+        'Volume': np.array([[8413730000]], dtype=np.float32),
+    }
 
     # PART Positive : Added new stock price data 
     # date,Close,High,Low,Open,Volume,label
     # 2020-05-27,9442.0498046875,9445.0595703125,9182.4501953125,9366.6298828125,4489110000,1
 
-    try:
-        predict_data = {
-            'model_input': np.array(predict_title),
-            'Low': np.array([[9182.4501953125]], dtype=np.float32),
-            'High': np.array([[9445.0595703125]], dtype=np.float32),
-            'Open': np.array([[9366.6298828125]], dtype=np.float32),
-            'Close': np.array([[9442.0498046875]], dtype=np.float32),
-            'Volume': np.array([[4489110000]], dtype=np.float32),
-        }
-    except Exception as e:
-        print(f'here {e}')
+    # try:
+    #     predict_data = {
+    #         'model_input': np.array(predict_title),
+    #         'Low': np.array([[9182.4501953125]], dtype=np.float32),
+    #         'High': np.array([[9445.0595703125]], dtype=np.float32),
+    #         'Open': np.array([[9366.6298828125]], dtype=np.float32),
+    #         'Close': np.array([[9442.0498046875]], dtype=np.float32),
+    #         'Volume': np.array([[4489110000]], dtype=np.float32),
+    #     }
+    # except Exception as e:
+    #     print(f'here {e}')
 
     prediction = model.predict(predict_data)
     print(prediction, 'up' if prediction >=0.5 else 'down')
@@ -312,7 +315,7 @@ else:
     early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1)
 
     # train
-    model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=1024, epochs=50, callbacks=[early_stop, tensorboard])
+    model.fit(train_inputs, y_train, validation_data=(val_inputs, y_val), batch_size=32, epochs=50, callbacks=[early_stop, tensorboard])
     model.summary()
     model.save(model_path)
     # 비상용
@@ -322,4 +325,5 @@ else:
         with open(tokenizer_path, 'wb') as f:
             pickle.dump(tokenizer, f)
     except Exception as e:
-            print('tokenizer 저장 실패')
+            print(f'tokenizer save fail : {e}')
+            

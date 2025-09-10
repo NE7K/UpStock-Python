@@ -4,18 +4,17 @@ import yfinance as yf
 import numpy as np
 
 # note regex import
-import re
+# import re
 
 # Get Yahoo Finance Data
 try:
     StockData = yf.download(
         '^NDX', # stock number
         start='2009-02-14',
-        end='2020-06-12',
+        end='2025-09-10',
         auto_adjust=True, # 과거 주가와 현재 주가의 차이점을 완화 병합 혹은 분할 그리고 상승으로 인한 차이
         progress=True
     )
-    
 except Exception as e:
     print(f'Download Fail : {e}')
     
