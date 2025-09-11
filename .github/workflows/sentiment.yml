@@ -3,26 +3,39 @@ name: Sentiment Pipeline
 on:
   schedule:
     - cron: "0 * * * *"   # 매시 정각 (UTC 기준, 하루 24번 실행)
-  workflow_dispatch:      # 수동 버튼
+  workflow_dispatch:      # 수동 실행 버튼
 
 jobs:
   run-sentiment:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. 저장소 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. Python 설치
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
+      # 3. pip 캐시
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('piplist.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # 4. 의존성 설치
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r piplist.txt
 
+      # 5. 환경 변수 세팅
       - name: Set environment variables
         run: |
           echo "SupaBase_Url=$SUPABASE_URL" >> $GITHUB_ENV
@@ -31,5 +44,6 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
+      # 6. 스크립트 실행
       - name: Run sentiment script
         run: python upstock-sentiment.py
