@@ -4,23 +4,23 @@
 # from keras.preprocessing.sequence import pad_sequences
 # from keras.callbacks import TensorBoard
 
+import tensorflow as tf
 import numpy as np
 import pandas as pd
 import pickle
+import supabase
 import os
-
-# 과거 log file 생성 규칙에 사용한 import
 import time
-import datetime # 보기 편한 log file 생성 시 필요한 import
+import datetime
 
 # validation x > split Test Data
 from sklearn.model_selection import train_test_split
-
-import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.callbacks import TensorBoard, EarlyStopping
+
+from finvizfinance.news import News
 
 # 경로
 sentiment_path = 'DataSets/upstock-sentiment-data.csv' # sentiment data
@@ -118,14 +118,35 @@ tokenizer = load_pickle(tokenizer_path, 'Tokenizer')
 # save model not exists => DeepLearning
 if os.path.exists(model_path) and os.path.exists(tokenizer_path):
 
+    # def load_news():
+    #     fnews = News()
+    #     # dictionary
+    #     all_news = fnews.get_news()
+    #     news_df = all_news['news']
+    #     predict_texts = news_df['Title'].tolist() # predict texts
+    #     # print(news_df['Title'][1])
+        
+    fnews = News()
+    all_news = fnews.get_news()
+    news_df = all_news['news'] 
+    # TODO load and to csv
+
+    # 문자열을 datetime으로 변환 (예: 'Sep-11-25 09:30AM')
+    news_df['parsed_date'] = pd.to_datetime(news_df['Date'], errors='coerce')
+
+    today = datetime.date.today()
+    today_news = news_df[news_df['parsed_date'].dt.date == today]
+
+    predict_texts = today_news['Title'].tolist()
+    
     # TEST predict data set
-    predict_texts = [
-        "EM portfolios funnel near $45 billion in August but cracks are showing, IIF says", # Negative
-        "Stocks' Bull Market Nears 3-Year Anniversary. It Likely Has More Room to Run.",    # Positive
-        "Stock Market Today: Dow Slides As Oracle Soars; Medicare News Hits Health Leader",  # Negative
-        "Stock Market Today: Dow and Nasdaq fall, S&P 500 loses momentum ahead of August consumer-price index on Thursday; Oracle share surge highlights technology spending", # Negative
-        "Oracle stock booms 35%, on pace for best day since 1992", # # Positive
-    ]
+    # predict_texts = [
+    #     "EM portfolios funnel near $45 billion in August but cracks are showing, IIF says", # Negative
+    #     "Stocks' Bull Market Nears 3-Year Anniversary. It Likely Has More Room to Run.",    # Positive
+    #     "Stock Market Today: Dow Slides As Oracle Soars; Medicare News Hits Health Leader",  # Negative
+    #     "Stock Market Today: Dow and Nasdaq fall, S&P 500 loses momentum ahead of August consumer-price index on Thursday; Oracle share surge highlights technology spending", # Negative
+    #     "Oracle stock booms 35%, on pace for best day since 1992", # Positive
+    # ]
 
     predict_data = tokenizer.texts_to_sequences(predict_texts)
     predict_data = pad_sequences(predict_data, maxlen=141) # str.len result 95% 141
@@ -133,9 +154,24 @@ if os.path.exists(model_path) and os.path.exists(tokenizer_path):
     prediction = model.predict(predict_data)
     # print(prediction)
     
+    # for text, prob in zip(predict_texts, prediction):
+    #     label = 'positive' if prob[0] >= 0.7 else 'negative'
+    #     print(f'[{label}] {text}\n : {prob[0]:.2f}\n') # :.2f
+        
     for text, prob in zip(predict_texts, prediction):
-        label = 'positive' if prob[0] >= 0.7 else 'negative'
-        print(f'[{label}] {text}\n : {prob[0]:.2f}\n') # :.2f
+        score = prob[0]
+        if score >= 0.6:
+            label = "positive"
+        elif score <= 0.4:
+            label = "negative"
+        else:
+            label = "neutral"
+        print(f"[{label}] {text}\n : {score:.2f}\n")
+        
+    #  TODO
+    # 1. 중립적인 혹은, 예측이 애매한 기사 거르기
+    # 2. to csv 파일로 예측값과 같이 supabase에 저장
+    # 3. 
 
 else:
     print('Sentiment Model and Tokenizer is not exists, Start DeepLearning')
