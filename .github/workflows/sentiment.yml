@@ -3,6 +3,7 @@ name: Sentiment Pipeline
 on:
   schedule:
     - cron: "0 * * * *"   # 매시 정각 (UTC 기준, 하루 24번 실행)
+  workflow_dispatch:      # 수동 버튼
 
 jobs:
   run-sentiment:
