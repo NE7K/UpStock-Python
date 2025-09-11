@@ -4,6 +4,7 @@
 # from keras.preprocessing.sequence import pad_sequences
 # from keras.callbacks import TensorBoard
 
+# pip github connect | pip freeze > piplist.txt
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -52,7 +53,7 @@ def download_model_file():
         try:
             res = bucket.download(file_path)
 
-            # download() 결과가 bytes 또는 Response일 수 있음
+            # download() result bytes > res 사용, result response > res.read()실행
             content = res.read() if hasattr(res, "read") else res
             local_path = os.path.join("SaveModel", os.path.basename(file_path))
             
