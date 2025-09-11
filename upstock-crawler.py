@@ -3,6 +3,9 @@ import pandas as pd
 import yfinance as yf
 import numpy as np
 
+# finviz
+from finvizfinance.news import News
+
 # note regex import
 # import re
 
