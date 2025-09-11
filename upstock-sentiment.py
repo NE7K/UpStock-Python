@@ -108,50 +108,39 @@ tokenizer = load_pickle(tokenizer_path, 'Tokenizer')
 # max       154.000000
 # Name: Text, dtype: float64
 
-# INFO 초기 모델 정규화 테스트 부분
-# model = tf.keras.models.Sequential([
-#     # out_dim 단어를 몇 차원으로 표기할건지 중간 : 128
-#     tf.keras.layers.Embedding(len(tokenizer.index_word) + 1, 64),
-#     # return sequence 다음 레이어에서 모든 sequence 사용 가능하게
-#     tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True)),
-#     # 앞선 레이어에서 중요한 단어 (최대값 이용)
-#     tf.keras.layers.GlobalAveragePooling1D(),
-#     tf.keras.layers.Dense(64, activation='relu'),
-#     # over fitting 방지
-#     tf.keras.layers.Dropout(0.3),
-#     tf.keras.layers.Dense(1, activation='sigmoid')
-# ])
+# RESULT 데이터셋 maxlen 95
+# lengths = sentiment_data['Text'].str.len()
+# print(lengths.quantile(0.90)) # 133.0
+# print(lengths.quantile(0.95)) # 141.0
+# exit()
 
 # save model exists => predict
 # save model not exists => DeepLearning
 if os.path.exists(model_path) and os.path.exists(tokenizer_path):
 
     # TEST predict data set
-    predict_data = {
+    predict_texts = [
         "EM portfolios funnel near $45 billion in August but cracks are showing, IIF says", # Negative
         "Stocks' Bull Market Nears 3-Year Anniversary. It Likely Has More Room to Run.",    # Positive
         "Stock Market Today: Dow Slides As Oracle Soars; Medicare News Hits Health Leader",  # Negative
-        "Stock Market Today: Dow and Nasdaq fall, S&P 500 loses momentum ahead of August consumer-price index on Thursday; Oracle share surge highlights technology spending", #부정
-        "Oracle stock booms 35%, on pace for best day since 1992" # 긍정
-    }
+        "Stock Market Today: Dow and Nasdaq fall, S&P 500 loses momentum ahead of August consumer-price index on Thursday; Oracle share surge highlights technology spending", # Negative
+        "Oracle stock booms 35%, on pace for best day since 1992", # # Positive
+    ]
 
-    predict_data = tokenizer.texts_to_sequences(predict_data)
-    predict_data = pad_sequences(predict_data, maxlen=110) # str.len result 75% : 106
+    predict_data = tokenizer.texts_to_sequences(predict_texts)
+    predict_data = pad_sequences(predict_data, maxlen=141) # str.len result 95% 141
 
     prediction = model.predict(predict_data)
-    print(prediction)
+    # print(prediction)
     
-    # TODO
-    # for i, sentence in enumerate(test_sentences):
-    # prob = predictions[i][0]
-    # label = "긍정 (1)" if prob >= 0.5 else "부정 (0)"
-    # print(f"{sentence} -> {prob:.4f} ({label})")
+    for text, prob in zip(predict_texts, prediction):
+        label = 'positive' if prob[0] >= 0.7 else 'negative'
+        print(f'[{label}] {text}\n : {prob[0]:.2f}\n') # :.2f
 
 else:
     print('Sentiment Model and Tokenizer is not exists, Start DeepLearning')
     
-    # TEST sentiment data regex : 필요없으면 빼보는 것도 괜찮음
-    # sentiment_data['Text'] = sentiment_data['Text'].str.replace('[^a-zA-Z0-9 ]', '', regex=True)
+    # TEST sentiment data regex
     # sentiment_data['Text'] = sentiment_data['Text'].str.replace('[^a-zA-Z0-9$%+\- ]', '', regex=True)
 
     # PART word level
@@ -162,18 +151,18 @@ else:
     tokenizer = Tokenizer(oov_token="<OOV>")
     tokenizer.fit_on_texts(sentiment_text)
     sequences = tokenizer.texts_to_sequences(sentiment_text)
-    sentiment_text = pad_sequences(sequences, maxlen=110)
+    sentiment_text = pad_sequences(sequences, maxlen=141)
 
     # text, sentiment data split 0.2
     X_train, X_val, y_train, y_val = train_test_split(sentiment_text, label, test_size=0.2, random_state=42)
 
     # using functional api
-    model_input = tf.keras.Input(shape=(110,), name='model_input')
+    model_input = tf.keras.Input(shape=(141,), name='model_input')
     embedding = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=128)(model_input)
     bidirectional = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True))(embedding)
     maxpool1d = tf.keras.layers.GlobalMaxPool1D()(bidirectional)
     dense1 = tf.keras.layers.Dense(64, activation='relu')(maxpool1d)
-    dropout1 = tf.keras.layers.Dropout(0.3)(dense1)
+    dropout1 = tf.keras.layers.Dropout(0.3)(dense1) # overfitting 
     dense2 = tf.keras.layers.Dense(32, activation='relu')(dropout1) # 추가 데이터 확보시 Added dense layer add
     model_output = tf.keras.layers.Dense(1, activation='sigmoid')(dense2)
     
@@ -185,13 +174,13 @@ else:
     # TODO 가독성 좋지 못하면 아래로 대체
     # tensorboard = TensorBoard(log_dir='LogFile/Log{}'.format('_SentimentModel_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")))
     tensorboard = TensorBoard(log_dir='LogFile/Log{}'.format('_SentimentModel_' + str(int(time.time()))) )
-    early_stop = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True, verbose=1) # early stop alarm
+    early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1) # early stop alarm
 
     # 학습
     model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        batch_size=64,
+        batch_size=32,
         epochs=20,
         callbacks=[early_stop, tensorboard]
     )
