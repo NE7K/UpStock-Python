@@ -180,7 +180,7 @@ if os.path.exists(model_path) and os.path.exists(tokenizer_path):
         print(f'finviz news parse fail : {e}')
 
     # string to date time
-    news_df['parsed_date'] = pd.to_datetime(news_df['Date'], errors='coerce') # format 지정
+    news_df['parsed_date'] = pd.to_datetime(news_df['Date'], errors='coerce') # BUG format 지정
 
     today = datetime.date.today() # today
     today_news = news_df[news_df['parsed_date'].dt.date == today] # today == parse data date
