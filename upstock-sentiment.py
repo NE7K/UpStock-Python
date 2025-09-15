@@ -34,7 +34,11 @@ supabase_url = os.getenv('SupaBase_Url')
 supabase_key = os.getenv('SupaBase_Key')
 
 # connect sb sdk
-supabase: Client = create_client(supabase_url, supabase_key)
+supabase: Client = create_client(
+    supabase_url,
+    supabase_key,
+    options={'timeout':15}  # 15sec timeoutexcept
+)
 
 # supabase storage
 def download_model_file():
@@ -50,20 +54,30 @@ def download_model_file():
     bucket = supabase.storage.from_(bucket_name)
     
     for file_path in file_paths:
-        try:
-            res = bucket.download(file_path)
+        
+        retries = 3 # 2 time retry
+        
+        for attempt in range(retries):
+            try:
+                res = bucket.download(file_path)
 
-            # download() result bytes > res 사용, result response > res.read()실행
-            content = res.read() if hasattr(res, "read") else res
-            local_path = os.path.join("SaveModel", os.path.basename(file_path))
-            
-            with open(local_path, "wb") as f:
-                f.write(content)
+                # download() result bytes > res 사용, result response > res.read()실행
+                content = res.read() if hasattr(res, "read") else res
+                local_path = os.path.join("SaveModel", os.path.basename(file_path))
+                
+                with open(local_path, "wb") as f:
+                    f.write(content)
 
-            print(f"{file_path} download complete {local_path}")
+                print(f"{file_path} download complete {local_path}")
+                break
 
-        except Exception as e:
-            print(f"{file_path} download fail : {e}")
+            except Exception as e:
+                print(f"{file_path} download fail : {e}")
+                if attempt < retries -1:
+                    print('retry')
+                    time.sleep(3)
+                else:
+                    print('error')
 
 # download_model_file()
 
@@ -302,7 +316,7 @@ else:
         callbacks=[early_stop, tensorboard]
     )
 
-    model.summary()
+    # model.summary()
     
     # save
     try:
