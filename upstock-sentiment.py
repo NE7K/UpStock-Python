@@ -65,13 +65,16 @@ def download_model_file():
         except Exception as e:
             print(f"{file_path} download fail : {e}")
 
-download_model_file()
+# download_model_file()
 
 # 경로
 sentiment_path = 'DataSets/upstock-sentiment-data.csv' # sentiment data
 tokenizer_path = 'SaveModel/upstock_sentiment_tokenizer.pickle'
 model_path = 'SaveModel/upstock_sentiment_model.keras'
 model_path_h5 = 'SaveModel/upstock_sentiment_model.h5' # compatibility issue .h5
+
+# TODO 근거
+model_pkl_path = 'SaveModel/upstock_sentiment_pkl.pkl' # import matplotlib.pyplot as plt
 
 # load file < predict task에는 필요없음
 def load_file(path, description):
@@ -290,8 +293,8 @@ else:
     tensorboard = TensorBoard(log_dir='LogFile/Log{}'.format('_SentimentModel_' + str(int(time.time()))) )
     early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1) # early stop alarm
 
-    # 학습
-    model.fit(
+    # history => pkl 
+    history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
         batch_size=32,
@@ -299,13 +302,12 @@ else:
         callbacks=[early_stop, tensorboard]
     )
 
-    # TEST
     model.summary()
     
     # save
     try:
         model.save(model_path)
-        model.save(model_path_h5)
+        # model.save(model_path_h5) # h5 version
     except Exception as e:
         print(f'model save fail : {e}')
 
@@ -314,3 +316,11 @@ else:
             pickle.dump(tokenizer, f)
     except Exception as e:
             print(f'tokenizer save fail : {e}')
+
+    try:
+        with open(model_pkl_path, 'wb') as f:
+            pickle.dump(history.history, f) # matplot
+    except Exception as e:
+            print(f'model pkl save fail : {e}')
+            
+            
