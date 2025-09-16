@@ -79,7 +79,7 @@ def download_model_file():
                 else:
                     print('error')
 
-# download_model_file()
+download_model_file()
 
 # 경로
 sentiment_path = 'DataSets/upstock-sentiment-data.csv' # sentiment data
