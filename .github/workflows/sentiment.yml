@@ -46,4 +46,4 @@ jobs:
 
       # 6. 스크립트 실행
       - name: Run sentiment script
-        run: python upstock-sentiment.py
+        run: python main.py
