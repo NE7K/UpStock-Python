@@ -10,26 +10,32 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from dataclasses import dataclass   # create data class
 
-# env load
-load_dotenv()
+@dataclass(frozen=True) # immutable
+class Config:
+    # online
+    supabase_url: str
+    supabase_key: str
+    bucket: str = 'sentiemnt_file'  # supabase bucket name
+    tbl_sentiment: str = 'news_sentiment'   # table name
+    source: str = 'finviz'
+    tz_target: str = 'Asia/Seoul'
+    
+    # local path
+    sentiment_path: str = 'DataSets/upstock-sentiment-data.csv' # sentiment data
+    tokenizer_path: str = 'SaveModel/upstock_sentiment_tokenizer.pickle'
+    model_path: str = 'SaveModel/upstock_sentiment_model.keras'
+    model_path_h5: str = 'SaveModel/upstock_sentiment_model.h5' # compatibility issue .h5
 
-supabase_url = os.getenv('SupaBase_Url')
-supabase_key = os.getenv('SupaBase_Key')
+    # 논문 근거
+    model_pkl_path: str = 'SaveModel/upstock_sentiment_pkl.pkl' # import matplotlib.pyplot as plt
 
-# connect sb sdk
-supabase: Client = create_client(
-    supabase_url,
-    supabase_key,
-)
-
-# 경로
-sentiment_path = 'DataSets/upstock-sentiment-data.csv' # sentiment data
-tokenizer_path = 'SaveModel/upstock_sentiment_tokenizer.pickle'
-model_path = 'SaveModel/upstock_sentiment_model.keras'
-model_path_h5 = 'SaveModel/upstock_sentiment_model.h5' # compatibility issue .h5
-
-# 논문 근거
-model_pkl_path = 'SaveModel/upstock_sentiment_pkl.pkl' # import matplotlib.pyplot as plt
+def load_config() -> Config:
+    load_dotenv()   # env load
+    url = os.getenv('SUPABASE_URL')
+    key = os.getenv('SUPABASE_KEY')
+    if not url or not key:
+        raise RuntimeError('Supabase URL, KEY Error')
+    return Config(supabase_url=url, supabase_key=key)
 
 # TEST
 # model.summary()
