@@ -187,12 +187,10 @@ SaveModel/*
 # Logs
 LogFile/*
 
-# 과거 사용 파일 백업용
-last python file
-
 # docker
-Docker/
+Docker/*
 
 # test python
-test.py
-test2.py
+backup.py
+
+백업/*

@@ -37,7 +37,6 @@ supabase_key = os.getenv('SupaBase_Key')
 supabase: Client = create_client(
     supabase_url,
     supabase_key,
-    options={'timeout':15}  # 15sec timeoutexcept
 )
 
 # supabase storage
