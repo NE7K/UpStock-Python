@@ -192,5 +192,3 @@ Docker/*
 
 # test python
 backup.py
-
-백업/*upstock-sentiment.py

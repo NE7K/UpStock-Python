@@ -1,7 +1,15 @@
+"""
+from Supabase storage 
+"""
+
+
 import os
 import time
+import logging
 
 from upstock.config import supabase
+
+logger = logging.getLogger(__name__)
 
 # supabase storage
 def download_model_file():
@@ -31,13 +39,13 @@ def download_model_file():
                 with open(local_path, "wb") as f:
                     f.write(content)
 
-                print(f"{file_path} download complete {local_path}")
+                logger.info(f"{file_path} download complete {local_path}")
                 break
 
             except Exception as e:
-                print(f"{file_path} download fail : {e}")
+                logger.error(f"{file_path} download failed : {e}")
                 if attempt < retries -1:
-                    print('retry')
+                    logger.info('Retry download')
                     time.sleep(3)
                 else:
-                    print('error')
+                    logger.error(f'{file_path} download failed after {retries} attempts')

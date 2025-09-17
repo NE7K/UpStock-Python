@@ -1,16 +1,31 @@
+"""
+Predict node
+
+fetches news, runs sentiment model, uploads results to supabase
+"""
+
 import hashlib # hash
 import datetime
 import pandas as pd
+import logging
+
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from finvizfinance.news import News
+from zoneinfo import ZoneInfo
 
-from upstock.config import model_path, tokenizer_path, supabase
-from upstock.models.artifacts import check_all_model, load_pickle
+from upstock.config import paths, supabase
+from upstock.models.artifacts import load_model_safe, load_pickle
+
+logger = logging.getLogger(__name__)
 
 def run_predict():
     
-    model = check_all_model(model_path, 'Sentiment Model .keras version')
-    tokenizer = load_pickle(tokenizer_path, 'Tokenizer')
+    model = load_model_safe(paths.model, 'Sentiment Model (.keras) version')
+    tokenizer = load_pickle(paths.tokenizer, 'Tokenizer')
+    
+    if model is None or tokenizer is None:
+        logger.error('model or tokenizer not available')    # flow task check
+        return
     
     # def load_news():
     #     fnews = News()
@@ -26,14 +41,18 @@ def run_predict():
         all_news = fnews.get_news()
         news_df = all_news['news'] 
     except Exception as e:
-        print(f'finviz news parse fail : {e}')
+        logger.error(f'finviz news parse failed : {e}')
+        return
+
+    # print(news_df['Date'].head(10))
+    today = datetime.date.today() # today
 
     # string to date time
-    news_df['parsed_date'] = pd.to_datetime(news_df['Date'], errors='coerce') # BUG format 지정
-
-    today = datetime.date.today() # today
+    news_df['parsed_date'] = pd.to_datetime(
+        news_df['Date'],
+        errors='coerce'
+    )
     today_news = news_df[news_df['parsed_date'].dt.date == today] # today == parse data date
-
     predict_texts = today_news['Title'].tolist() # insert pare data
     
     # past predict data
@@ -47,7 +66,6 @@ def run_predict():
 
     predict_data = tokenizer.texts_to_sequences(predict_texts)
     predict_data = pad_sequences(predict_data, maxlen=141) # str.len result 95% 141
-
     prediction = model.predict(predict_data)
     # print(prediction)
     
@@ -65,7 +83,7 @@ def run_predict():
         
     for text, percent in zip(predict_texts, prediction):
         # 강한 긍정과 강한 부정만 끌어다가 쓰기
-        score = float(percent[0])
+        score = float(percent[0])   # float 필수
         if score >= 0.8:
             label = "positive"
         elif score <= 0.3:
@@ -73,11 +91,11 @@ def run_predict():
         else:
             continue
         
-        print(f"[{label}] {text}\n : {score:.2f}\n") # :.2f
+        logger.info(f"[{label}] {text} : {score:.2f}\n") # :.2f
     
         sb_result.append({
             'text': text,
-            'percent': score, # BUG type error float32
+            'percent': score,
             'label': label,
             'source': 'finviz',
             'run_at': datetime.datetime.now(datetime.timezone.utc).isoformat(), # utc time
@@ -91,11 +109,11 @@ def run_predict():
                 .upsert(sb_result, on_conflict='hash')
                 .execute()
             )
-            print(f'supbase upload complete : {len(response.data)}')
+            logger.info(f'supbase upload complete : {len(response.data)} rows')
             
         except Exception as e:
-            print(f'supabase upload fail : {e}')
+            logger.error(f'supabase upload failed : {e}')
             
     else:
-        print('upload data not exist')
+        logger.warning('upload data not exist')
     
