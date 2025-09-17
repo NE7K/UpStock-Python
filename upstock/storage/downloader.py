@@ -2,18 +2,16 @@
 from Supabase storage 
 """
 
-
 import os
 import time
 import logging
 
-from upstock.config import supabase
+from upstock.config import supabase, SupabaseConfig
 
 logger = logging.getLogger(__name__)
 
 # supabase storage
 def download_model_file():
-    bucket_name = 'sentiment_file'
     
     file_paths = [
         'upstock_sentiment_model.keras',
@@ -22,7 +20,7 @@ def download_model_file():
     ]
 
     os.makedirs('SaveModel', exist_ok=True) # exist no error
-    bucket = supabase.storage.from_(bucket_name)
+    bucket = supabase.storage.from_(SupabaseConfig.bucket_name)
     
     for file_path in file_paths:
         

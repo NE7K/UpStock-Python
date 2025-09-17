@@ -17,15 +17,16 @@ from dataclasses import dataclass   # create data class
 load_dotenv()
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.INFO, # info 이상 log print
     format='%(asctime)s [%(levelname)s] %(name)s - %(message)s',
-    stream=sys.stdout
+    stream=sys.stdout   # import sys 터미널에 로그 출력
 )
 
 @dataclass(frozen=True) # 불변
 class SupabaseConfig:
     url: str = os.getenv('SUPABASE_URL')
     key: str = os.getenv('SUPABASE_KEY')
+    bucket_name: str = 'sentiment_file' # download model file
     
     @property
     def client(self) -> Client:

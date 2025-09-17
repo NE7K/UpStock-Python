@@ -47,11 +47,12 @@ def run_predict():
     # print(news_df['Date'].head(10))
     today = datetime.date.today() # today
 
-    # string to date time
-    news_df['parsed_date'] = pd.to_datetime(
-        news_df['Date'],
-        errors='coerce'
+    news_df["parsed_date"] = pd.to_datetime(
+        today.strftime("%Y-%m-%d ") + news_df["Date"],
+        format="%Y-%m-%d %I:%M%p",
+        errors="coerce"
     )
+    
     today_news = news_df[news_df['parsed_date'].dt.date == today] # today == parse data date
     predict_texts = today_news['Title'].tolist() # insert pare data
     
