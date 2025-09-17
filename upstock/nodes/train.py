@@ -2,10 +2,9 @@
 Training node for sentiment anlaysis model
 """
 
-import os
+# import os, datetime
 import time
 import pickle
-import datetime
 import tensorflow as tf
 import logging
 

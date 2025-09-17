@@ -12,5 +12,9 @@ from upstock.storage.downloader import download_model_file
 from upstock.builders.pipeline import run_pipeline
 
 if __name__ == '__main__':
+    """
+    download model file : supabase model and tokenizer download
+    run pipeline : connect predict, train node 
+    """
     download_model_file()
     run_pipeline()

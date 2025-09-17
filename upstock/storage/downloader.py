@@ -6,7 +6,7 @@ import os
 import time
 import logging
 
-from upstock.config import supabase, SupabaseConfig
+from upstock.config import supabase, paths, SupabaseConfig
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 def download_model_file():
     
     file_paths = [
-        'upstock_sentiment_model.keras',
-        'upstock_sentiment_model.h5',
-        'upstock_sentiment_tokenizer.pickle'
+        paths.model,
+        paths.model_h5,
+        paths.tokenizer
     ]
 
     os.makedirs('SaveModel', exist_ok=True) # exist no error
