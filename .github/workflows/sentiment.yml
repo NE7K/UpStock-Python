@@ -38,8 +38,8 @@ jobs:
       # 5. 환경 변수 세팅
       - name: Set environment variables
         run: |
-          echo "SupaBase_Url=$SUPABASE_URL" >> $GITHUB_ENV
-          echo "SupaBase_Key=$SUPABASE_KEY" >> $GITHUB_ENV
+          echo "SUPABASE_URL=$SUPABASE_URL" >> $GITHUB_ENV
+          echo "SUPABASE_KEY=$SUPABASE_KEY" >> $GITHUB_ENV
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
