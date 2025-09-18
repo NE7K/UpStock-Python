@@ -53,16 +53,6 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
-      # 7. 모델 없을 때만 Supabase에서 다운로드
-      - name: Download model if not cached
-        run: |
-          if [ ! -f SaveModel/upstock_sentiment_model.keras ]; then
-            echo "Downloading model from Supabase..."
-            python scripts/download_model.py
-          else
-            echo "Model already cached, skip download"
-          fi
-
-      # 8. 스크립트 실행
+      # 7. 스크립트 실행 (main.py 안에서 필요시 모델 다운로드)
       - name: Run sentiment script
         run: python main.py
