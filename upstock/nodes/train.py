@@ -60,7 +60,7 @@ def run_train():
     # TODO 가독성 좋지 못하면 아래로 대체
     # tensorboard = TensorBoard(log_dir='LogFile/Log{}'.format('_SentimentModel_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")))
     log_dir = f'LogFile/Log_SentimentModel_{int(time.time())}'
-    tensorboard = TensorBoard(Log_dir=log_dir)
+    tensorboard = TensorBoard(log_dir=log_dir)
     early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=1) # early stop alarm
 
     # history => pkl 
@@ -92,5 +92,3 @@ def run_train():
             pickle.dump(history.history, f) # matplot
     except Exception as e:
             print(f'History save failed : {e}')
-            
-            
