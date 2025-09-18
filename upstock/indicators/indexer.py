@@ -52,18 +52,16 @@ def compute_index(
     index_raw = round((S + 2.0) * 25.0) # 0~100 범위로 매핑
     
     comp = {
-        'news_pos': news_pos,
-        'news_neg': news_neg,
-        's_news': S_news,
-        'rsi_val': rsi_val,
+        'rsi': rsi_val,
         's_rsi': S_rsi,
-        'vix_val': vix_val,
+        'vix': vix_val,
         's_vix': S_vix,
-        'macd_val': float(macd_val),
+        'macd_val': float(macd_val.item() if hasattr(macd_val, "item") else macd_val),
         'signal_val': float(signal_val),
         's_macd': S_macd,
         's_ma': S_ma
     }
+
     return index_raw, comp
 
 def label_zone(idx: int) -> str:

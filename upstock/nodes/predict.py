@@ -131,16 +131,13 @@ def run_predict():
     zone = label_zone(index_val)
     logger.info(
         f"Market Index : {index_val} ({zone}) "
-        f"[news {comp['s_news']:+.2f}, rsi {comp['s_rsi']:+.2f}, vix {comp['s_vix']:+.2f}, macd {comp['s_macd']:+.2f}]"
+        f"[rsi {comp['s_rsi']:+.2f}, vix {comp['s_vix']:+.2f}, macd {comp['s_macd']:+.2f}, ma {comp['s_ma']:+.2f}]"
     )
     
     recode = {
         "date_utc": datetime.datetime.now(datetime.timezone.utc).date().isoformat(),
         "score": int(index_val),
         "zone": zone,
-        "news_pos": comp.get("news_pos", 0),
-        "news_neg": comp.get("news_neg", 0),
-        "s_news": comp.get("s_news", 0.0),
         "rsi": comp.get("rsi", 0.0),
         "s_rsi": comp.get("s_rsi", 0.0),
         "vix": comp.get("vix", 0.0),
@@ -148,7 +145,6 @@ def run_predict():
         "macd_val": comp.get("macd_val", 0.0),
         "signal_val": comp.get("signal_val", 0.0),
         "s_macd": comp.get("s_macd", 0.0),
-        "ma_200": comp.get("ma_200", 0.0),
         "s_ma": comp.get("s_ma", 0.0),
         "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
     }

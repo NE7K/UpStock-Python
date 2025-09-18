@@ -46,12 +46,14 @@ def score_macd(macd_line: float, signal_line: float, hist_series: pd.Series) -> 
     
     if hist_series.empty:
         return 0.0  # float
-    
-    min_val = hist_series.min().item()  # 과거 히스토그램 값 중 최소
-    max_val = hist_series.max().item()  # 가장 큰 양수
+
+    min_val = float(hist_series.min().iloc[0] if hasattr(hist_series.min(), "iloc") else hist_series.min())  # 과거 히스토그램 값 중 최소
+    max_val = float(hist_series.max().iloc[0] if hasattr(hist_series.max(), "iloc") else hist_series.max())  # 가장 큰 양수
+
     scale = max(abs(min_val), abs(max_val), 1e-9)   # abs 절댓값 1e-9로 0으로 나누는 것 방지
-    
-    return float(np.clip(hist / scale, -1, 1))
+    hist_val = hist.iloc[-1] if hasattr(hist, "iloc") else hist
+    return float(np.clip(hist_val / scale, -1, 1))
+    # return float(np.clip(hist / scale, -1, 1))
 
 def score_vix(vix_today: float, hist_vix: pd.Series) -> float:
     """
