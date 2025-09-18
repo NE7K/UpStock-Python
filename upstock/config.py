@@ -16,6 +16,10 @@ from dataclasses import dataclass   # create data class
 # env load
 load_dotenv()
 
+"""
+log ex)
+2025-09-18 00:09:10,835 [INFO] upstock.nodes.predict - [positive] Investors haven't been this bullish on stocks in months : 0.92
+"""
 logging.basicConfig(
     level=logging.INFO, # info 이상 log print
     format='%(asctime)s [%(levelname)s] %(name)s - %(message)s',

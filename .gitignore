@@ -192,3 +192,5 @@ Docker/*
 
 # test python
 backup.py
+
+test.py

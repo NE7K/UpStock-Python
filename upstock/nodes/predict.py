@@ -16,6 +16,10 @@ from zoneinfo import ZoneInfo
 from upstock.config import paths, supabase
 from upstock.models.artifacts import load_model_safe, load_pickle
 
+# PART market data part
+from upstock.indicators.indexer import compute_index, label_zone
+from upstock.storage.market_data import fetch_prices
+
 logger = logging.getLogger(__name__)
 
 def run_predict():
@@ -83,6 +87,8 @@ def run_predict():
     sb_result = []  # sending to supabase predict data
         
     for text, percent in zip(predict_texts, prediction):
+        
+        pos, neg = 0, 0
         # 강한 긍정과 강한 부정만 끌어다가 쓰기
         score = float(percent[0])   # float 필수
         if score >= 0.8:
@@ -117,4 +123,38 @@ def run_predict():
             
     else:
         logger.warning('upload data not exist')
+        
+    spy = fetch_prices('SPY')
+    vix = fetch_prices('^VIX')
     
+    index_val, comp = compute_index(pos, neg, spy, vix)
+    zone = label_zone(index_val)
+    logger.info(
+        f"Market Index : {index_val} ({zone}) "
+        f"[news {comp['s_news']:+.2f}, rsi {comp['s_rsi']:+.2f}, vix {comp['s_vix']:+.2f}, macd {comp['s_macd']:+.2f}]"
+    )
+    
+    recode = {
+        "date_utc": datetime.datetime.now(datetime.timezone.utc).date().isoformat(),
+        "score": int(index_val),
+        "zone": zone,
+        "news_pos": comp.get("news_pos", 0),
+        "news_neg": comp.get("news_neg", 0),
+        "s_news": comp.get("s_news", 0.0),
+        "rsi": comp.get("rsi", 0.0),
+        "s_rsi": comp.get("s_rsi", 0.0),
+        "vix": comp.get("vix", 0.0),
+        "s_vix": comp.get("s_vix", 0.0),
+        "macd_val": comp.get("macd_val", 0.0),
+        "signal_val": comp.get("signal_val", 0.0),
+        "s_macd": comp.get("s_macd", 0.0),
+        "ma_200": comp.get("ma_200", 0.0),
+        "s_ma": comp.get("s_ma", 0.0),
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+    }
+
+    try:
+        supabase.table('market_sentiment_index').upsert(recode, on_conflict='date_utc').execute()
+        logger.info('Supabase index upload complete')
+    except Exception as e:
+        logger.error(f'Supabse index upload failed : {e}')
