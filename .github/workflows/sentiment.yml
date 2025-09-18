@@ -29,13 +29,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # 4. 의존성 설치
+      # 4. 모델 캐시 (SaveModel 디렉토리)
+      - name: Cache model files
+        uses: actions/cache@v3
+        with:
+          path: SaveModel/
+          key: ${{ runner.os }}-sentiment-model-v1
+          restore-keys: |
+            ${{ runner.os }}-sentiment-model-
+
+      # 5. 의존성 설치
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r piplist.txt
 
-      # 5. 환경 변수 세팅
+      # 6. 환경 변수 세팅
       - name: Set environment variables
         run: |
           echo "SUPABASE_URL=$SUPABASE_URL" >> $GITHUB_ENV
@@ -44,6 +53,16 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
-      # 6. 스크립트 실행
+      # 7. 모델 없을 때만 Supabase에서 다운로드
+      - name: Download model if not cached
+        run: |
+          if [ ! -f SaveModel/upstock_sentiment_model.keras ]; then
+            echo "Downloading model from Supabase..."
+            python scripts/download_model.py
+          else
+            echo "Model already cached, skip download"
+          fi
+
+      # 8. 스크립트 실행
       - name: Run sentiment script
         run: python main.py
