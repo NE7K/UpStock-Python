@@ -126,8 +126,6 @@ SELECT date_utc, score, zone, rsi, vix, macd_val FROM market_sentiment_index LIM
 
 ## 🖥️ Training environment
 
-초기모델 학습 시간은 대략 4시간, 두 번째 모델은 학습 시간 대략 1시간, 현재 모델 학습 시간 1분
-
 ```
 Tensorflow 2.10
 
