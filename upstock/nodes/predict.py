@@ -1,7 +1,8 @@
 """
 Predict node
 
-fetches news, runs sentiment model, uploads results to supabase
+part 1 : fetches news, runs sentiment model, uploads results to supabase
+part 2 : fetches stock price, run sentiment algorithm, uploads result to supabase
 """
 
 import hashlib # hash
@@ -11,7 +12,6 @@ import logging
 
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from finvizfinance.news import News
-from zoneinfo import ZoneInfo
 
 from upstock.config import paths, supabase
 from upstock.models.artifacts import load_model_safe, load_pickle
@@ -123,7 +123,8 @@ def run_predict():
             
     else:
         logger.warning('upload data not exist')
-        
+    
+    # market sentiment part
     spy = fetch_prices('SPY')
     vix = fetch_prices('^VIX')
     
