@@ -1,4 +1,4 @@
-<img src="https://github.com/user-attachments/assets/ca28df82-b7fe-467c-a86e-113321e0b5a9" width="100%" height="100%"> </img>
+<img width="100%" src="https://github.com/user-attachments/assets/ca28df82-b7fe-467c-a86e-113321e0b5a9" width="100%" height="100%"> </img>
 
 ## 📖 Overview
 
@@ -133,6 +133,11 @@ Cpu : AMD 5600
 Ram : 32GB
 Gpu : RTX 4060 8GB
 ```
+
+## WBS
+
+<img width="90%" alt="image" src="https://github.com/user-attachments/assets/cd9408e1-7198-4746-984d-531352247006" />
+
 
 ## 📧 Contact
 
