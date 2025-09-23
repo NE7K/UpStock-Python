@@ -90,7 +90,7 @@ upstock-python/
 
 ## System configuration diagram
 
-<img width="100%" alt="system diagram" src="https://github.com/user-attachments/assets/1fe24cfe-0da4-4d8e-bc22-7ada93908529" />
+<img width="100%" alt="system diagram" src="https://github.com/user-attachments/assets/b186c72f-2df9-402c-87bd-fe1d1a4d419f" />
 
 ## Predict result saved in Supabase Table
 
@@ -136,7 +136,11 @@ Gpu : RTX 4060 8GB
 
 ## WBS
 
-<img width="90%" alt="image" src="https://github.com/user-attachments/assets/cd9408e1-7198-4746-984d-531352247006" />
+<img width="90%" alt="WBS" src="https://github.com/user-attachments/assets/62f8b65d-6d24-4020-90f1-7ebe8901075f"/>
+
+## Flow
+
+<img width="90%" alt="Flow" src="https://github.com/user-attachments/assets/5c04838c-12d5-4c34-b190-b9749a112080"/>
 
 
 ## 📧 Contact
