@@ -17,7 +17,7 @@ def download_model_file():
     
     file_paths = [
         paths.model_gz,
-        paths.model_h5_gz,
+        # paths.model_h5_gz,
         paths.tokenizer
     ]
 
