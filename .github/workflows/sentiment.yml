@@ -35,7 +35,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: SaveModel/
-          key: ${{ runner.os }}-sentiment-model-v2 # 모델 v2
+          key: ${{ runner.os }}-sentiment-model-v3 # 모델 v3
           restore-keys: |
             ${{ runner.os }}-sentiment-model-
 
