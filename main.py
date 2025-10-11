@@ -16,5 +16,5 @@ if __name__ == '__main__':
     download model file : supabase model and tokenizer download
     run pipeline : connect predict, train node 
     """
-    # download_model_file()
+    download_model_file()
     run_pipeline()
