@@ -1,8 +1,8 @@
 """
-Training node for 3-class sentiment model (Softmax + StratifiedKFold + Class Weight)
+Training node for 3-class sentiment model (Softmax + StratifiedKFold + Class Weight + Best-Fold Save)
 """
 
-import os, time, pickle, logging
+import os, time, pickle, logging, shutil
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -30,14 +30,14 @@ def run_train():
 
     # Text / Label
     texts = sentiment_data['Text'].astype(str).tolist()
-    labels = sentiment_data['Sentiment'].astype(int).values # int로 불러옴
+    labels = sentiment_data['Sentiment'].astype(int).values  # int로 불러옴
 
-    # Tokenize
-    tokenizer = Tokenizer(oov_token="<OOV>")
-    tokenizer.fit_on_texts(texts)
-    seqs = tokenizer.texts_to_sequences(texts)
-    padded = pad_sequences(seqs, maxlen=300, padding='post', truncating='post') # 300 이후 뒷 글자 자름
-    
+    # 전역 Tokenizer 및 pad_sequences 생성 제거
+    # tokenizer = Tokenizer(oov_token="<OOV>")
+    # tokenizer.fit_on_texts(texts)
+    # seqs = tokenizer.texts_to_sequences(texts)
+    # padded = pad_sequences(seqs, maxlen=300, padding='post', truncating='post')
+
     """
     ===== 문장 길이 통계 =====
     평균 길이: 112.49
@@ -48,22 +48,38 @@ def run_train():
     최대 길이: 2107
     """
 
-    # Class weight (불균형 보정)
+    # Class weight
     classes = np.unique(labels)
     weights = compute_class_weight('balanced', classes=classes, y=labels)
     class_weights = dict(zip(classes, weights))
-    logger.info(f"Class weights: {class_weights}")
+    logger.info(f"Class weights : {class_weights}")
 
     # Stratified K-Fold
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     fold = 1
-    all_reports = []
+    all_reports, all_histories = [], {}
 
-    for train_idx, val_idx in skf.split(padded, labels):
+    # Best Fold 저장용 변수
+    best_fold, best_val_acc, best_model, best_tokenizer = None, 0.0, None, None
+
+    # padded 대신 texts 직접 split
+    for train_idx, val_idx in skf.split(texts, labels):
         logger.info(f"Fold {fold} / 5")
 
-        X_train, X_val = padded[train_idx], padded[val_idx]
+        # Fold별 텍스트 분리
+        X_train_texts = [texts[i] for i in train_idx]
+        X_val_texts   = [texts[i] for i in val_idx]
         y_train, y_val = labels[train_idx], labels[val_idx]
+
+        # Fold별 Tokenizer 새로 학습
+        tokenizer = Tokenizer(oov_token="<OOV>")
+        tokenizer.fit_on_texts(X_train_texts)
+
+        X_train_seq = tokenizer.texts_to_sequences(X_train_texts)
+        X_val_seq   = tokenizer.texts_to_sequences(X_val_texts)
+
+        X_train = pad_sequences(X_train_seq, maxlen=300, padding='post', truncating='post')
+        X_val   = pad_sequences(X_val_seq, maxlen=300, padding='post', truncating='post')
 
         # Build model
         model_input = tf.keras.Input(shape=(300,), name='model_input')
@@ -83,19 +99,20 @@ def run_train():
         )
         
         # INFO callback | tensorboard --logdir=LogFile/
-        # time.time() 큰 숫자가 최신
-        # TODO 가독성 좋지 못하면 아래로 대체
-        # tensorboard = TensorBoard(log_dir='LogFile/Log{}'.format('_SentimentModel_' + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")))
-        log_dir = f'LogFile/Log_Softmax_Fold{fold}_{int(time.time())}'
+        log_dir = f'LogFile/Log_Softmax_Fold{fold}'
+        if os.path.exists(log_dir):
+            shutil.rmtree(log_dir)
+        os.makedirs(log_dir, exist_ok=True)
+
         callbacks = [
             TensorBoard(log_dir=log_dir),
-            EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+            EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True)
         ]
 
         history = model.fit(
             X_train, y_train,
             validation_data=(X_val, y_val),
-            epochs=10,
+            epochs=20,
             batch_size=32,
             class_weight=class_weights,
             callbacks=callbacks,
@@ -107,8 +124,26 @@ def run_train():
         # 예측 및 혼동행렬
         y_pred = np.argmax(model.predict(X_val), axis=1)
         cm = confusion_matrix(y_val, y_pred)
-        report = classification_report(y_val, y_pred, target_names=['negative', 'neutral', 'positive'], output_dict=True)
+        report = classification_report(
+            y_val, y_pred,
+            target_names=['negative', 'neutral', 'positive'],
+            output_dict=True
+        )
         all_reports.append(report)
+        
+        os.makedirs("SaveModel", exist_ok=True)
+        with open(f'SaveModel/history_fold{fold}.pkl', 'wb') as f:
+            pickle.dump(history.history, f)
+            
+        all_histories[f'fold_{fold}'] = history.history
+
+        # [ADDED] 현재 fold의 최고 검증 정확도 추적
+        val_acc = max(history.history['val_accuracy'])
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            best_fold = fold
+            best_model = model
+            best_tokenizer = tokenizer
 
         # Confusion Matrix 시각화 저장
         os.makedirs('Image/ConfMatrix', exist_ok=True)
@@ -122,21 +157,31 @@ def run_train():
         plt.savefig(f'Image/ConfMatrix/fold_{fold}.png', bbox_inches='tight')
         plt.close()
 
-        fold += 1 # fold number ++
+        fold += 1  # fold number ++
 
     # 평균 리포트
     avg_acc = np.mean([r['accuracy'] for r in all_reports])
-    logger.info(f"Average Accuracy (5-Fold): {avg_acc:.4f}")
+    avg_loss = np.mean([np.mean(h['loss']) for h in all_histories.values()])
+    logger.info(f"Average Accuracy (5-Fold) : {avg_acc:.4f}")
+    logger.info(f"Average Training Loss : {avg_loss:.4f}")
 
-    # Save final model + tokenizer + history
+    # Best fold 모델과 tokenizer 저장
     try:
-        model.save(paths.model)
-        model.save(paths.model_h5)
-        with open(paths.tokenizer, 'wb') as f:
-            pickle.dump(tokenizer, f)
-        with open(paths.history, 'wb') as f:
-            pickle.dump(history.history, f)
+        os.makedirs("SaveModel", exist_ok=True)
+        best_model.save(os.path.join("SaveModel", f"best_model_fold{best_fold}.keras"))
+        with open(os.path.join("SaveModel", f"best_tokenizer_fold{best_fold}.pkl"), 'wb') as f:
+            pickle.dump(best_tokenizer, f)
+        logger.info(f"Best fold : {best_fold}, val_acc : {best_val_acc:.4f}")
     except Exception as e:
-        logger.error(f"Save failed : {e}")
+        logger.error(f"Best model save failed : {e}")
 
-    logger.info("Training completed successfully")
+    # 마지막 fold 모델 저장 제거 (best만 저장하도록)
+    # try:
+    #     model.save(paths.model)
+    #     model.save(paths.model_h5)
+    #     with open(paths.tokenizer, 'wb') as f:
+    #         pickle.dump(tokenizer, f)
+    #     with open(paths.history, 'wb') as f:
+    #         pickle.dump(all_histories, f)
+    # except Exception as e:
+    #     logger.error(f"Save failed : {e}")
