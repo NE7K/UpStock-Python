@@ -2,6 +2,8 @@
 from Supabase storage 
 """
 
+import gzip
+import shutil
 import os
 import time
 import logging
@@ -38,6 +40,15 @@ def download_model_file():
                     f.write(content)
 
                 logger.info(f"{file_path} download complete {local_path}")
+                
+                # gzip -9 upstock_sentiment_model.keras
+                if local_path.endswith(".gz"): # 압축 제거
+                    uncompressed_path = local_path[:-3]  # .gz 제거
+                    with gzip.open(local_path, "rb") as f_in:
+                        with open(uncompressed_path, "wb") as f_out:
+                            shutil.copyfileobj(f_in, f_out)
+                    logger.info(f"{file_path} decompressed to {uncompressed_path}")
+                    
                 break
 
             except Exception as e:
