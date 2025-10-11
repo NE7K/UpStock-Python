@@ -36,7 +36,17 @@ def run_train():
     tokenizer = Tokenizer(oov_token="<OOV>")
     tokenizer.fit_on_texts(texts)
     seqs = tokenizer.texts_to_sequences(texts)
-    padded = pad_sequences(seqs, maxlen=141) # max len 체크해야함
+    padded = pad_sequences(seqs, maxlen=300, padding='post', truncating='post') # 300 이후 뒷 글자 자름
+    
+    """
+    ===== 문장 길이 통계 =====
+    평균 길이: 112.49
+    중간값: 97
+    90% 백분위: 201
+    95% 백분위: 240
+    99% 백분위: 346
+    최대 길이: 2107
+    """
 
     # Class weight (불균형 보정)
     classes = np.unique(labels)
@@ -56,7 +66,7 @@ def run_train():
         y_train, y_val = labels[train_idx], labels[val_idx]
 
         # Build model
-        model_input = tf.keras.Input(shape=(141,), name='model_input')
+        model_input = tf.keras.Input(shape=(300,), name='model_input')
         embedding = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=128)(model_input)
         bidirectional = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64, return_sequences=True))(embedding)
         maxpool1d = tf.keras.layers.GlobalMaxPooling1D()(bidirectional)
@@ -109,7 +119,7 @@ def run_train():
         plt.title(f'Confusion Matrix - Fold {fold}')
         plt.xlabel('Predicted')
         plt.ylabel('True')
-        plt.savefig(f'LogFile/ConfMatrix/fold_{fold}.png', bbox_inches='tight')
+        plt.savefig(f'ConfMatrix/fold_{fold}.png', bbox_inches='tight')
         plt.close()
 
         fold += 1 # fold number ++
