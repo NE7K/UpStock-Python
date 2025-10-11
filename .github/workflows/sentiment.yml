@@ -25,9 +25,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('piplist.txt') }}
+          key: ${{ runner.os }}-pip-v2-${{ hashFiles('piplist.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+
 
       # 4. 모델 캐시 (SaveModel 디렉토리)
       - name: Cache model files
