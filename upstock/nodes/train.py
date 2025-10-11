@@ -99,7 +99,7 @@ def run_train():
             batch_size=32,
             class_weight=class_weights,
             callbacks=callbacks,
-            verbose=2  # 1이 진행바
+            verbose=1  # 1이 진행바
         )
         
         # model.summary()
@@ -111,15 +111,15 @@ def run_train():
         all_reports.append(report)
 
         # Confusion Matrix 시각화 저장
-        os.makedirs('LogFile/ConfMatrix', exist_ok=True)
-        plt.figure(figsize=(5,4))
+        os.makedirs('Image/ConfMatrix', exist_ok=True)
+        plt.figure(figsize=(5, 4))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                    xticklabels=['neg','neu','pos'],
-                    yticklabels=['neg','neu','pos'])
+                    xticklabels=['neg', 'neu', 'pos'],
+                    yticklabels=['neg', 'neu', 'pos'])
         plt.title(f'Confusion Matrix - Fold {fold}')
         plt.xlabel('Predicted')
         plt.ylabel('True')
-        plt.savefig(f'ConfMatrix/fold_{fold}.png', bbox_inches='tight')
+        plt.savefig(f'Image/ConfMatrix/fold_{fold}.png', bbox_inches='tight')
         plt.close()
 
         fold += 1 # fold number ++
