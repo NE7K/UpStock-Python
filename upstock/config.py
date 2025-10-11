@@ -39,7 +39,7 @@ class SupabaseConfig:
 @dataclass(frozen=True)
 class PathConfig:
     sentiment_data: str = 'DataSets/upstock-sentiment-data.csv' # sentiment data
-    tokenizer: str = 'SaveModel/upstock_sentiment_tokenizer.pickle'
+    tokenizer: str = 'SaveModel/upstock_sentiment_tokenizer.pkl'
     model_gz: str = 'SaveModel/upstock_sentiment_model.keras.gz'
     model_h5_gz: str = 'SaveModel/upstock_sentiment_model.h5.gz'
     model: str = 'SaveModel/upstock_sentiment_model.keras'
