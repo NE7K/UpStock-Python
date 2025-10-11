@@ -194,3 +194,6 @@ Docker/*
 backup.py
 
 test.py
+
+verification/dataclassification.py
+verification/splitcsv.py
