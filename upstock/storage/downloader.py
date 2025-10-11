@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 def download_model_file():
     
     file_paths = [
-        paths.model,
-        paths.model_h5,
+        paths.model_gz,
+        paths.model_h5_gz,
         paths.tokenizer
     ]
 

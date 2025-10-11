@@ -40,6 +40,8 @@ class SupabaseConfig:
 class PathConfig:
     sentiment_data: str = 'DataSets/upstock-sentiment-data.csv' # sentiment data
     tokenizer: str = 'SaveModel/upstock_sentiment_tokenizer.pickle'
+    model_gz: str = 'SaveModel/upstock_sentiment_model.keras.gz'
+    model_h5_gz: str = 'SaveModel/upstock_sentiment_model.h5.gz'
     model: str = 'SaveModel/upstock_sentiment_model.keras'
     model_h5: str = 'SaveModel/upstock_sentiment_model.h5'
     history: str = 'SaveModel/upstock_sentiment_pkl.pkl' # import matplotlib.pyplot as plt
